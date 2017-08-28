@@ -11,7 +11,6 @@ namespace ClassScheduler.Algorithm
     {
         AS_USER_STOPED,
         AS_CRITERIA_STOPPED,
-        AS_RUNNING
     };
 
     public class GeneticAlgorithm

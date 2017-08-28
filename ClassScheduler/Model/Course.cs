@@ -8,10 +8,16 @@ namespace ClassScheduler.Model
 {
     public class Course
     {
+        public Course(int id, string name)
+        {
+            this.Id = id;
+            this.Name = name;
+        }
+
         /// <summary>
         /// Gets or sets the identifier of the course.
         /// </summary>
-        public string Id { get; set; }
+        public int Id { get; set; }
 
         /// <summary>
         /// Gets or sets the name of the course.

@@ -8,10 +8,17 @@ namespace ClassScheduler.Model
 {
     public class StudentsGroup
     {
+        public StudentsGroup(int id, string name, int number)
+        {
+            this.Id = id;
+            this.Name = name;
+            this.NumberOfStudents = number;
+        }
+
         /// <summary>
         /// Gets or sets the identifier of the group.
         /// </summary>
-        public string Id { get; set; }
+        public int Id { get; set; }
 
         /// <summary>
         /// Gets or sets the name of the group.

@@ -11,7 +11,7 @@ namespace ClassScheduler.Model
         /// <summary>
         /// Gets or sets the identifier of a professor.
         /// </summary>
-        public string Id { get; set; }
+        public int Id { get; set; }
 
         /// <summary>
         /// Gets or sets the name of a professor.
@@ -22,5 +22,11 @@ namespace ClassScheduler.Model
         /// Gets or sets a list of classes that a professor teaches..
         /// </summary>
         List<CourseClass> TeachClasses { get; set; } = new List<CourseClass>();
+
+        public Professor(int id, string name)
+        {
+            this.Id = id;
+            this.Name = name;
+        }
     }
 }

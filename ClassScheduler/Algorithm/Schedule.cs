@@ -9,6 +9,20 @@ namespace ClassScheduler.Algorithm
 {
     public class Schedule
     {
+        // Number of working hours per day
+        public const int DAY_HOURS = 12;
+
+        // Number of days in week
+        public const int DAYS_NUM = 5;
+
+        private Random random = new Random();
+
+        private int Rand()
+        {
+            return this.random.Next(0, 100);
+        }
+
+
         #region Fields
 
         // Number of crossover points of parent's class tables
@@ -36,7 +50,7 @@ namespace ClassScheduler.Algorithm
         /// <summary>
         /// Time-space slots, one entry represent one hour in one classroom
         /// </summary>
-        private List<List<CourseClass>> slots;
+        public List<List<CourseClass>> Slots { get; set; }
 
         /// <summary>
         /// Class table for chromosome
@@ -79,7 +93,7 @@ namespace ClassScheduler.Algorithm
             else
             {
                 // copy code
-                this.slots = c.slots;
+                this.Slots = c.Slots;
                 this.classes = c.classes;
 
                 // copy flags of class requirements
@@ -113,27 +127,25 @@ namespace ClassScheduler.Algorithm
             Schedule newChromosome = new Schedule(this, true);
 
             // place classes at random position
-            const List<CourseClass> c = Configuration::GetInstance().GetCourseClasses();
-            foreach (var it in c)
-            {
-
-            }
-            for (List<CourseClass>::const_iterator it = c.begin(); it != c.end(); it++)
+            List<CourseClass> classes = Configuration.GetInstance().GetCourseClasses();
+            foreach (CourseClass c in classes)
             {
                 // determine random position of class
-                int nr = Configuration::GetInstance().GetNumberOfRooms();
-                int dur = (*it)->GetDuration();
-                int day = rand() % DAYS_NUM;
-                int room = rand() % nr;
-                int time = rand() % (DAY_HOURS + 1 - dur);
+                int nr = Configuration.GetInstance().GetNumberOfRooms();
+                int dur = c.Duration;
+                int day = this.Rand() % DAYS_NUM;
+                int room = this.Rand() % nr;
+                int time = this.Rand() % (DAY_HOURS + 1 - dur);
                 int pos = day * nr * DAY_HOURS + room * DAY_HOURS + time;
 
                 // fill time-space slots, for each hour of class
                 for (int i = dur - 1; i >= 0; i--)
-                    newChromosome->_slots.at(pos + i).push_back(*it);
+                {
+                    newChromosome.._slots.at(pos + i).a.push_back(c);
+                }
 
                 // insert in class table of chromosome
-                newChromosome->_classes.insert(pair<CourseClass*, int>(*it, pos));
+                newChromosome->_classes.insert(pair<CourseClass*, int>(*c, pos));
             }
 
             newChromosome->CalculateFitness();
