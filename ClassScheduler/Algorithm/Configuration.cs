@@ -27,10 +27,10 @@ namespace ClassScheduler.Algorithm
         private Dictionary<int, Course> courses;
 
         // Parsed rooms
-        private Dictionary<int, Classroom> classrooms;
+        public Dictionary<int, Classroom> Classrooms { get; set; }
 
         // Parsed classes
-        private List<CourseClass> courseClasses;
+        public List<CourseClass> CourseClasses;
 
         // Inidicate that configuration is not prsed yet
         private bool isEmpty;
@@ -99,17 +99,17 @@ namespace ClassScheduler.Algorithm
             }
 
             // Initial classrooms
-            this.classrooms.Clear();
+            this.Classrooms.Clear();
             for (int i = 0; i < 10; i++)
             {
                 int n = random.Next(0, 10);
                 bool hasComputer = n % 3 == 0;
-                this.classrooms[i] = new Classroom($"Room{i}", hasComputer, RoomSeats[n]);
+                this.Classrooms[i] = new Classroom($"Room{i}", hasComputer, RoomSeats[n]);
             }
 
 
             // Initial classes
-            this.courseClasses.Clear();
+            this.CourseClasses.Clear();
             for (int i = 0; i < 10; i++)
             {
                 int n = random.Next(0, 10);
@@ -217,25 +217,7 @@ namespace ClassScheduler.Algorithm
         // If there is no room with such ID method returns NULL
         public Classroom GetRoomById(int id)
         {
-            return this.classrooms.ContainsKey(id) ? this.classrooms[id] : null;
-        }
-
-        // Returns number of parsed rooms
-        public int GetNumberOfRooms()
-        {
-            return this.classrooms.Count;
-        }
-
-        // Returns reference to list of parsed classes
-        public List<CourseClass> GetCourseClasses()
-        {
-            return this.courseClasses;
-        }
-
-        // Returns number of parsed classes
-        public int GetNumberOfCourseClasses()
-        {
-            return this.courseClasses.Count;
+            return this.Classrooms.ContainsKey(id) ? this.Classrooms[id] : null;
         }
 
         // Returns TRUE if configuration is not parsed yet

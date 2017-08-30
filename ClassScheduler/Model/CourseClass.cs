@@ -49,5 +49,28 @@ namespace ClassScheduler.Model
         /// Gets or sets the duration of the class (in hours).
         /// </summary>
         public int Duration { get; set; }
+
+        // Returns TRUE if another class has one or overlapping student groups.
+        public bool GroupsOverlap(CourseClass c)
+        {
+            foreach (var g1 in this.StrudentsGroups)
+            {
+                foreach (var g2 in c.StrudentsGroups)
+                {
+                    if (g1 == g2)
+                    {
+                        return true;
+                    }
+                }
+            }
+
+            return false;
+        }
+
+        // Returns TRUE if another class has same professor.
+        public bool ProfessorOverlaps(CourseClass c)
+        {
+            return this.Professor == c.Professor;
+        }
     }
 }
