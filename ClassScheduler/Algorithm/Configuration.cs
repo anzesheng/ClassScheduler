@@ -24,7 +24,7 @@ namespace ClassScheduler.Algorithm
         private Dictionary<int, StudentsGroup> studentsGroups;
 
         // Parsed courses
-        private Dictionary<int, Course> courses;
+        public Dictionary<int, Course> Courses { get; set; }
 
         // Parsed rooms
         public Dictionary<int, Classroom> Classrooms { get; set; }
@@ -92,10 +92,10 @@ namespace ClassScheduler.Algorithm
             }
 
             // Initial courses
-            this.courses.Clear();
+            this.Courses.Clear();
             for (int i = 0; i < 10; i++)
             {
-                this.courses[i] = new Course(i, $"Course{i}");
+                this.Courses[i] = new Course(i, $"Course{i}");
             }
 
             // Initial classrooms
@@ -205,13 +205,13 @@ namespace ClassScheduler.Algorithm
         // If there is no course with such ID method returns NULL
         public Course GetCourseById(int id)
         {
-            return this.courses.ContainsKey(id) ? this.courses[id] : null;
+            return this.Courses.ContainsKey(id) ? this.Courses[id] : null;
         }
 
-        public int GetNumberOfCourses()
-        {
-            return this.courses.Count;
-        }
+        //public int GetNumberOfCourses()
+        //{
+        //    return this.courses.Count;
+        //}
 
         // Returns pointer to room with specified ID
         // If there is no room with such ID method returns NULL

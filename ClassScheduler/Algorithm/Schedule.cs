@@ -65,9 +65,11 @@ namespace ClassScheduler.Algorithm
 
         /// <summary>
         /// Time-space slots, one entry represent one hour in one classroom
+        /// 时间槽列表。一个时间槽表示一间教室的一个小时。
+        /// 在这里一个时间槽里可以放置多个课堂，因为计算过程中会出现冲突的情况。
+        /// 该列表的长度 = 上课日数×每日课时数×教室数
+        /// 某一节课的时间槽的序号 = (在第几个工作日-1)×教室总数×每日的课时数 + 在第几个工作日×在第几间教室×在第几时段
         /// </summary>
-        //public List<List<CourseClass>> Slots { get; set; }
-
         private List<CourseClass>[] slots;
 
         public List<CourseClass>[] Slots
@@ -85,7 +87,7 @@ namespace ClassScheduler.Algorithm
         /// <summary>
         /// Class table for chromosome
         /// Used to determine first time-space slot used by class
-        /// 排课总表
+        /// 排课总表词典，key是课堂，value是
         /// </summary>
         public Dictionary<CourseClass, int> Classes { get; set; }
 
@@ -93,48 +95,71 @@ namespace ClassScheduler.Algorithm
 
         #region Constructors and Destructors
 
-        // Initializes chromosomes with configuration block (setup of chromosome)
+        /// <summary>
+        /// Initializes chromosomes with configuration block (setup of chromosome)
+        /// 初始化染色体
+        /// </summary>
+        /// <param name="numberOfCrossoverPoints">交换点的数量</param>
+        /// <param name="mutationSize">突变的数量</param>
+        /// <param name="crossoverProbability">杂交的可能性</param>
+        /// <param name="mutationProbability">突变的可能性</param>
         public Schedule(int numberOfCrossoverPoints, int mutationSize,
             int crossoverProbability, int mutationProbability)
         {
-            this.mutationSize = mutationSize;
             this.numberOfCrossoverPoints = numberOfCrossoverPoints;
+            this.mutationSize = mutationSize;
             this.crossoverProbability = crossoverProbability;
             this.mutationProbability = mutationProbability;
             this.Fitness = 0;
 
             // reserve space for time-space slots in chromosomes code
             //_slots.resize(DAYS_NUM * DAY_HOURS * Configuration::GetInstance().GetNumberOfRooms());
+            this.slots = new List<CourseClass>[DAYS_NUM * DAY_HOURS * Configuration.GetInstance().Classrooms.Count];
 
             // reserve space for flags of class requirements
             //_criteria.resize(Configuration::GetInstance().GetNumberOfCourseClasses() * 5);
+            int num = Configuration.GetInstance().Courses.Count * 5;
+            this.criteria = new bool[num];
         }
 
-        // Copy constructor
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="Schedule"/> class.
+        /// Copy constructor
+        /// 拷贝构造
+        /// </summary>
+        /// <param name="c">被拷贝者</param>
+        /// <param name="setupOnly">是否只拷贝size。True时只拷贝size，不拷贝内容。</param>
         public Schedule(Schedule c, bool setupOnly)
         {
             if (setupOnly)
             {
                 // reserve space for time-space slots in chromosomes code
+                // 准备好时间槽容器
                 Array.Resize(ref this.slots, DAYS_NUM * DAY_HOURS * Configuration.GetInstance().Classrooms.Count);
 
                 // reserve space for flags of class requirements
+                // 准备好标准数组（为什么乘以5？）
                 Array.Resize(ref this.criteria, Configuration.GetInstance().Classrooms.Count * 5);
             }
             else
             {
                 // copy code
+                // 拷贝染色体编码
                 this.Slots = c.Slots;
                 this.Classes = c.Classes;
 
                 // copy flags of class requirements
+                // 拷贝标准数组
                 this.Criteria = c.Criteria;
 
                 // copy fitness
+                // 拷贝适应性
                 this.Fitness = c.Fitness;
             }
 
             // copy parameters
+            // 拷贝参数
             this.numberOfCrossoverPoints = c.numberOfCrossoverPoints;
             this.mutationSize = c.mutationSize;
             this.crossoverProbability = c.crossoverProbability;
@@ -152,40 +177,52 @@ namespace ClassScheduler.Algorithm
         // 创建新染色体，拷贝设置但是随即排列课程
         public Schedule MakeNewFromPrototype()
         {
-            // number of time-space slots
-            // 时间曹数量
-            int size = this.Slots.Length;
-
             // make new chromosome, copy chromosome setup
-            // 创建新染色体，拷贝当前染色体的设置
+            // 创建新染色体，只拷贝当前染色体的size，不拷贝内容
             Schedule newChromosome = new Schedule(this, true);
 
             // place classes at random position
-            // 随机排列课程
+            // 获取所有需要上的课
             List<CourseClass> classes = Configuration.GetInstance().CourseClasses;
+
+            // 将每一个需要上的课随机地排到一间教室的一个或多个时段里
             foreach (CourseClass c in classes)
             {
                 // determine random position of class
-                // 确定随机位置
+                // 随机确定课堂的位置
+
+                // 教室总数
                 int numberOfRooms = Configuration.GetInstance().Classrooms.Count;
+
+                // 当前课堂的时长
                 int dur = c.Duration;
+
+                // 随机确定当前是第几个上课日
                 int day = this.Rand() % DAYS_NUM;
+
+                // 随机确定使用第几间教室
                 int room = this.Rand() % numberOfRooms;
+
+                // 随机选择一个上课时间
                 int time = this.Rand() % (DAY_HOURS + 1 - dur);
+
+                // 计算出本课堂的时间槽需要，即在总课堂列表中的位置
+                // 总课程列表：上课日数×每日课时数×教室数
                 int pos = day * numberOfRooms * DAY_HOURS + room * DAY_HOURS + time;
 
                 // fill time-space slots, for each hour of class
-                // 在时段上排课
+                // 在当前教室的指定时段上排课，有的课堂需要占用多个时段
                 for (int i = dur - 1; i >= 0; i--)
                 {
                     newChromosome.Slots[pos + i].Add(c);
                 }
 
                 // insert in class table of chromosome
-                // 记录课程的时段
+                // 记录课程的起始时段
                 newChromosome.Classes[c] = pos;
             }
 
+            //计算新染色体的适应性
             newChromosome.CalculateFitness();
 
             // return smart pointer
@@ -207,37 +244,38 @@ namespace ClassScheduler.Algorithm
         public Schedule Crossover(Schedule parent2)
         {
             // check probability of crossover operation
+            // 看看这次是否需要杂交，如果不需要
             if (this.Rand() % 100 > this.crossoverProbability)
             {
                 // no crossover, just copy first parent
-                // 不杂交，直接复制和返回第一个父本
+                // 不进行杂交，而是直接复制和返回第一个父本
                 return new Schedule(this, false);
             }
 
             // new chromosome object, copy chromosome setup
-            // 新染色体，拷贝第一个父本，只要配置信息，不要排课信息
+            // 拷贝第一个父本创建新染色体。只拷贝配置信息，不拷贝内容。
             Schedule newSchedule = new Schedule(this, true);
 
-            // 交换点
+            // 交换点数组
             bool[] cp = new bool[this.Classes.Count];
 
             // determine crossover point (randomly)
-            // 首先随机选择染色体上的交换点
+            // 随机选择指定数量的交换点
             for (int i = this.numberOfCrossoverPoints; i > 0; i--)
             {
                 while (true)
                 {
-                    int p = Rand() % this.Classes.Count;
-                    if (!cp[p])
+                    int pos = Rand() % this.Classes.Count;
+                    if (!cp[pos])
                     {
-                        cp[p] = true;
+                        cp[pos] = true;
                         break;
                     }
                 }
             }
 
             // make new code by combining parent codes
-            // 一半的概率
+            // 确定第一个基因从那个父亲染色体中获取，双亲各有一半的概率被选中。
             bool first = Rand() % 2 == 0;
 
             for (int i = 0; i < this.Classes.Count; i++)
@@ -262,7 +300,7 @@ namespace ClassScheduler.Algorithm
                 if (cp[i])
                 {
                     // change soruce chromosome
-                    // 切换源染色体
+                    // 切换父本
                     first = !first;
                 }
             }
