@@ -1,4 +1,5 @@
 ﻿using ClassScheduler.Model;
+using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -12,28 +13,27 @@ namespace ClassScheduler.Algorithm
     {
         #region Fields
 
-        private readonly int[] RoomSeats = new int[] { 20, 30, 40, 50, 60, 70, 80, 90, 100, 200, 500 };
-
         // Global instance
         private static Configuration instance;
 
         // Parsed professors
-        private Dictionary<int, Professor> professors;
+        public Dictionary<int, Professor> Professors { get; set; } = new Dictionary<int, Professor>();
 
         // Parsed student groups
-        private Dictionary<int, StudentsGroup> studentsGroups;
+        public Dictionary<int, StudentsGroup> StudentsGroups { get; set; } = new Dictionary<int, StudentsGroup>();
 
         // Parsed courses
-        public Dictionary<int, Course> Courses { get; set; }
+        public Dictionary<int, Course> Courses { get; set; } = new Dictionary<int, Course>();
 
         // Parsed rooms
-        public Dictionary<int, Classroom> Classrooms { get; set; }
+        public Dictionary<int, Classroom> Classrooms { get; set; } = new Dictionary<int, Classroom>();
 
         // Parsed classes
-        public List<CourseClass> CourseClasses;
+        // 待排的课程，有算法使用者提供
+        public List<CourseClass> CourseClasses { get; set; } = new List<CourseClass>();
 
         // Inidicate that configuration is not prsed yet
-        private bool isEmpty;
+        public bool IsEmpty { get; private set; }
 
         Random random = new Random();
 
@@ -44,7 +44,7 @@ namespace ClassScheduler.Algorithm
         // Initialize data
         private Configuration()
         {
-            this.isEmpty = true;
+            this.IsEmpty = true;
         }
 
         // Frees used resources
@@ -59,146 +59,108 @@ namespace ClassScheduler.Algorithm
 
         public static Configuration GetInstance()
         {
+            if (instance == null)
+            {
+                instance = new Configuration();
+            }
             return instance;
-        }
-
-        public bool IsEmpty()
-        {
-            return this.isEmpty;
         }
 
         #endregion
 
         #region Public Methods
 
-
-
         // Parse file and store parsed object
         public void ParseFile(string fileName)
         {
-            // Initial professors
-            this.professors.Clear();
-            for (int i = 0; i < 10; i++)
-            {
-                this.professors[i] = new Professor(i, $"Professor{i}");
-            }
-
-            // Initial professors
-            this.studentsGroups.Clear();
-            for (int i = 0; i < 10; i++)
-            {
-                int numberOfStudents = random.Next(20, 100);
-                this.studentsGroups[i] = new StudentsGroup(i, $"Group{i}", numberOfStudents);
-            }
-
-            // Initial courses
+            this.Professors.Clear();
+            this.StudentsGroups.Clear();
             this.Courses.Clear();
-            for (int i = 0; i < 10; i++)
-            {
-                this.Courses[i] = new Course(i, $"Course{i}");
-            }
-
-            // Initial classrooms
             this.Classrooms.Clear();
-            for (int i = 0; i < 10; i++)
-            {
-                int n = random.Next(0, 10);
-                bool hasComputer = n % 3 == 0;
-                this.Classrooms[i] = new Classroom($"Room{i}", hasComputer, RoomSeats[n]);
-            }
-
-
-            // Initial classes
             this.CourseClasses.Clear();
-            for (int i = 0; i < 10; i++)
+
+            try
             {
-                int n = random.Next(0, 10);
-                bool hasComputer = n % 3 == 0;
-                //this.courseClasses[i] = new CourseClass($"Room{i}", hasComputer, RoomSeats[n]);
+                JObject o = JObject.Parse(File.ReadAllText(fileName));
+
+                var professors = o.GetValue("Professors").ToObject<Professor[]>();
+                foreach (var p in professors)
+                {
+                    this.Professors[p.Id] = p;
+                }
+
+                var groups = o.GetValue("StudentsGroups").ToObject<StudentsGroup[]>();
+                foreach (var g in groups)
+                {
+                    this.StudentsGroups[g.Id] = g;
+                }
+
+                var courses = o.GetValue("Courses").ToObject<Course[]>();
+                foreach (var c in courses)
+                {
+                    this.Courses[c.Id] = c;
+                }
+
+                var rooms = o.GetValue("Classrooms").ToObject<Classroom[]>();
+                foreach (var r in rooms)
+                {
+                    this.Classrooms[r.Id] = r;
+                }
+
+                var classTokens = o.GetValue("CourseClasses").ToArray();
+                foreach (var token in classTokens)
+                {
+                    int professorId = token.Value<int>("Professor");
+                    int courseId = token.Value<int>("Course");
+                    int duration = token.Value<int>("Duration");
+                    int[] groupIds = token["StudentsGroups"].ToObject<int[]>();
+                    bool requireComputers = token.Value<bool?>("RequireComputers") ?? false;
+
+                    var groupsInClass = new List<StudentsGroup>();
+                    foreach (var id in groupIds)
+                    {
+                        groupsInClass.Add(this.StudentsGroups[id]);
+                    }
+
+                    var cc = new CourseClass(this.Courses[courseId], this.Professors[professorId],
+                        duration, groupsInClass, requireComputers);
+
+                    this.CourseClasses.Add(cc);
+                }
+
+                this.IsEmpty = false;
             }
-
-
-            // clear previously parsed objects
-
-            //Classroom.RestartIDs();
-
-            //string line;
-
-            //// open file
-            //var file = new StreamReader(fileName);
-
-            //while ((line = file.ReadLine()) != null)
-            //{
-            //    line.Trim();
-
-            //    // get type of object, parse obect and store it
-
-            //    if (line.Equals("#prof", StringComparison.InvariantCultureIgnoreCase))
-            //    {
-
-            //    }
-
-            //    if (line.compare("#prof") == 0)
-            //    {
-            //        Professor* p = ParseProfessor(input);
-            //        if (p)
-            //            _professors.insert(pair<int, Professor*>(p->GetId(), p));
-            //    }
-            //    else if (line.compare("#group") == 0)
-            //    {
-            //        StudentsGroup* g = ParseStudentsGroup(input);
-            //        if (g)
-            //            _studentGroups.insert(pair<int, StudentsGroup*>(g->GetId(), g));
-            //    }
-            //    else if (line.compare("#course") == 0)
-            //    {
-            //        Course* c = ParseCourse(input);
-            //        if (c)
-            //            _courses.insert(pair<int, Course*>(c->GetId(), c));
-            //    }
-            //    else if (line.compare("#room") == 0)
-            //    {
-            //        Room* r = ParseRoom(input);
-            //        if (r)
-            //            _rooms.insert(pair<int, Room*>(r->GetId(), r));
-            //    }
-            //    else if (line.compare("#class") == 0)
-            //    {
-            //        CourseClass* c = ParseCourseClass(input);
-            //        if (c)
-            //            _courseClasses.push_back(c);
-            //    }
-            //}
-
-            //input.close();
-
-            //_isEmpty = false;
+            catch (Exception e)
+            {
+                string str = e.Message;
+                throw;
+            }
         }
 
         // Returns pointer to professor with specified ID
         // If there is no professor with such ID method returns NULL
         public Professor GetProfessorById(int id)
         {
-            return this.professors.ContainsKey(id) ? this.professors[id] : null;
+            return this.Professors.ContainsKey(id) ? this.Professors[id] : null;
         }
 
         // Returns number of parsed professors
         public int GetNumberOfProfessors()
         {
-            return this.professors.Count;
+            return this.Professors.Count;
         }
 
         // Returns pointer to student group with specified ID
         // If there is no student group with such ID method returns NULL
         public StudentsGroup GetStudentsGroupById(int id)
         {
-            return this.studentsGroups.ContainsKey(id) ? this.studentsGroups[id] : null;
+            return this.StudentsGroups.ContainsKey(id) ? this.StudentsGroups[id] : null;
         }
 
         // Returns number of parsed student groups
         public int GetNumberOfStudentGroups()
         {
-            return this.studentsGroups.Count;
+            return this.StudentsGroups.Count;
         }
 
         // Returns pointer to course with specified ID

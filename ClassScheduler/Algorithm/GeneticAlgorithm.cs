@@ -333,16 +333,18 @@ namespace ClassScheduler.Algorithm
                 }
 
                 // algorithm has found new best chromosome
-                if (best != GetBestChromosome() && _observer)
+                // 如果算法获得了更好的染色体
+                var newBest = this.GetBestChromosome();
+                if (best != newBest && this.observer!=null)
                     // notify observer
-                    _observer->NewBestChromosome(*GetBestChromosome());
+                    this.observer.NewBestChromosome(newBest);
 
-                _currentGeneration++;
+                this.currentGeneration++;
             }
 
-            if (_observer)
+            if (this.observer!=null)
                 // notify observer that execution of algorithm has changed it state
-                _observer->EvolutionStateChanged(_state);
+                this.observer.EvolutionStateChanged(state);
         }
 
         // Stops execution of algoruthm
@@ -424,7 +426,7 @@ namespace ClassScheduler.Algorithm
         // Returns TRUE if chromosome belongs to best chromosome group
         private bool IsInBest(int chromosomeIndex)
         {
-            throw new NotImplementedException();
+            return this.BestFlags[chromosomeIndex];
         }
 
         // Clears best chromosome group

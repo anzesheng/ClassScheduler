@@ -1,13 +1,42 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Collections.Generic;
 
 namespace ClassScheduler.Model
 {
+    /// <summary>
+    /// 一堂课
+    /// </summary>
     public class CourseClass
     {
+        #region Constructors
+
+        public CourseClass(Course course, Professor professor, int duration,
+            List<StudentsGroup> groups, bool requireComputers)
+        {
+            this.Course = course;
+            this.Professor = professor;
+            this.Duration = duration;
+            this.StudentsGroups = groups;
+            this.RequireComputers = requireComputers;
+        }
+
+        public CourseClass(CourseClass c)
+        {
+            this.Course = c.Course;
+            this.Professor = c.Professor;
+            this.Duration = c.Duration;
+            this.StudentsGroups = new List<StudentsGroup>();
+            foreach (var g in c.StudentsGroups)
+            {
+                this.StudentsGroups.Add(g);
+            }
+
+            this.RequireComputers = c.RequireComputers;
+        }
+
+        #endregion
+
+        #region Properties
+
         /// <summary>
         /// Gets or sets the courset which the class belongs.
         /// 课程信息
@@ -24,7 +53,7 @@ namespace ClassScheduler.Model
         /// Gets or sets the list of student groups that attend the class.
         /// 上课的班级列表，因为有可能上合班课，所以是列表。
         /// </summary>
-        public List<StudentsGroup> StrudentsGroups { get; set; } = new List<StudentsGroup>();
+        public List<StudentsGroup> StudentsGroups { get; set; } = new List<StudentsGroup>();
 
         /// <summary>
         /// Gets the number of seats (sum of student groups' sizes) are needed in the classroom.
@@ -35,7 +64,7 @@ namespace ClassScheduler.Model
             get
             {
                 int count = 0;
-                foreach (var group in this.StrudentsGroups)
+                foreach (var group in this.StudentsGroups)
                 {
                     count += group.NumberOfStudents;
                 }
@@ -56,13 +85,17 @@ namespace ClassScheduler.Model
         /// </summary>
         public int Duration { get; set; }
 
+        #endregion
+
+        #region Methods
+
         // Returns TRUE if another class has one or overlapping student groups.
         // 如果有班级需要同时上另一节课，返回true。（表示冲突了）
         public bool GroupsOverlap(CourseClass c)
         {
-            foreach (var g1 in this.StrudentsGroups)
+            foreach (var g1 in this.StudentsGroups)
             {
-                foreach (var g2 in c.StrudentsGroups)
+                foreach (var g2 in c.StudentsGroups)
                 {
                     if (g1 == g2)
                     {
@@ -80,5 +113,7 @@ namespace ClassScheduler.Model
         {
             return this.Professor == c.Professor;
         }
+
+        #endregion
     }
 }
