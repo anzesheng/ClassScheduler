@@ -77,9 +77,9 @@ namespace ClassScheduler.Algorithm
         /// <summary>
         /// Class table for chromosome
         /// Used to determine first time-space slot used by class
-        /// 排课总表词典，key是课堂，value是课堂的大排行序号。
+        /// 排课结果，key是课堂，value是课堂的时间槽序号。
         /// </summary>
-        public Dictionary<CourseClass, int> ClassTable { get; set; } = new Dictionary<CourseClass, int>();
+        public Dictionary<CourseClass, int> ScheduledClasses { get; set; } = new Dictionary<CourseClass, int>();
 
         #endregion
 
@@ -124,9 +124,9 @@ namespace ClassScheduler.Algorithm
         /// Copy constructor
         /// 拷贝构造
         /// </summary>
-        /// <param name="c">被拷贝者</param>
+        /// <param name="s">被拷贝者</param>
         /// <param name="setupOnly">是否只拷贝size。True时只拷贝size，不拷贝内容。</param>
-        public Schedule(Schedule c, bool setupOnly)
+        public Schedule(Schedule s, bool setupOnly)
         {
             // reserve space for time-space slots in chromosomes code
             // 准备好时间槽容器
@@ -147,39 +147,39 @@ namespace ClassScheduler.Algorithm
             {
                 // copy code
                 // 拷贝染色体编码
-                for (int i = 0; i < c.slots.Length; i++)
+                for (int i = 0; i < s.slots.Length; i++)
                 {
-                    foreach (var s in c.slots[i])
+                    foreach (var cc in s.slots[i])
                     {
-                        this.slots[i].Add(s);
+                        this.slots[i].Add(cc);
                     }
                 }
 
                 // 拷贝课堂
-                this.ClassTable = new Dictionary<CourseClass, int>();
-                foreach (var pair in c.ClassTable)
+                this.ScheduledClasses = new Dictionary<CourseClass, int>();
+                foreach (var pair in s.ScheduledClasses)
                 {
-                    this.ClassTable[pair.Key] = pair.Value;
+                    this.ScheduledClasses[pair.Key] = pair.Value;
                 }
 
                 // copy flags of class requirements
                 // 拷贝标准数组
-                for (int i = 0; i < c.criteria.Length; i++)
+                for (int i = 0; i < s.criteria.Length; i++)
                 {
-                    this.criteria[i] = c.criteria[i];
+                    this.criteria[i] = s.criteria[i];
                 }
 
                 // copy fitness
                 // 拷贝适应性
-                this.Fitness = c.Fitness;
+                this.Fitness = s.Fitness;
             }
 
             // copy parameters
             // 拷贝其他参数
-            this.numberOfCrossoverPoints = c.numberOfCrossoverPoints;
-            this.mutationSize = c.mutationSize;
-            this.crossoverProbability = c.crossoverProbability;
-            this.mutationProbability = c.mutationProbability;
+            this.numberOfCrossoverPoints = s.numberOfCrossoverPoints;
+            this.mutationSize = s.mutationSize;
+            this.crossoverProbability = s.crossoverProbability;
+            this.mutationProbability = s.mutationProbability;
         }
 
         // Makes copy ot chromosome
@@ -235,7 +235,7 @@ namespace ClassScheduler.Algorithm
 
                 // insert in class table of chromosome
                 // 记录课程的起始时段
-                newChromosome.ClassTable[c] = pos;
+                newChromosome.ScheduledClasses[c] = pos;
             }
 
             //计算新染色体的适应性
@@ -271,7 +271,7 @@ namespace ClassScheduler.Algorithm
             Schedule newSchedule = new Schedule(this, true);
 
             // 交换点数组
-            bool[] cp = new bool[this.ClassTable.Count];
+            bool[] cp = new bool[this.ScheduledClasses.Count];
 
             // determine crossover point (randomly)
             // 随机选择指定数量的交换点
@@ -279,7 +279,7 @@ namespace ClassScheduler.Algorithm
             {
                 while (true)
                 {
-                    int pos = Rand() % this.ClassTable.Count;
+                    int pos = Rand() % this.ScheduledClasses.Count;
                     if (!cp[pos])
                     {
                         cp[pos] = true;
@@ -292,16 +292,16 @@ namespace ClassScheduler.Algorithm
             // 确定第一个基因从那个父亲染色体中获取，双亲各有一半的概率被选中。
             bool first = Rand() % 2 == 0;
 
-            for (int i = 0; i < this.ClassTable.Count; i++)
+            for (int i = 0; i < this.ScheduledClasses.Count; i++)
             {
                 // 选择父本
                 Schedule parent = first ? this : parent2;
 
-                CourseClass cc = parent.ClassTable.ElementAt(i).Key;
-                int p = parent.ClassTable.ElementAt(i).Value;
+                CourseClass cc = parent.ScheduledClasses.ElementAt(i).Key;
+                int p = parent.ScheduledClasses.ElementAt(i).Value;
 
                 // insert class from first parent into new chromosome's calss table
-                newSchedule.ClassTable[cc] = p;
+                newSchedule.ScheduledClasses[cc] = p;
 
                 // all time-space slots of class are copied
                 for (int j = cc.Duration - 1; j >= 0; j--)
@@ -327,44 +327,67 @@ namespace ClassScheduler.Algorithm
         }
 
         // Performs mutation on chromosome
+        // 在当前染色体上执行变异
         public void Mutation()
         {
             // check probability of mutation operation
+            // 检查是否需要变异
             if (Rand() % 100 > mutationProbability)
             {
                 return;
             }
 
             // number of classes
-            int numberOfClasses = this.ClassTable.Count;
+            // 已经排好的课堂数
+            int numberOfClasses = this.ScheduledClasses.Count;
 
             // number of time-space slots
+            // 时间槽数量
             int numberOfSlots = this.slots.Length;
 
             // move selected number of classes at random position
+            // 随机移动指定数量课堂的时间槽
             for (int i = mutationSize; i > 0; i--)
             {
                 // select ranom chromosome for movement
+                // 随机选择一个染色体
                 int mpos = Rand() % numberOfClasses;
 
                 // current time-space slot used by class
-                int pos1 = this.ClassTable.ElementAt(mpos).Value;
+                // 获得改染色体的时间槽
+                int pos1 = this.ScheduledClasses.ElementAt(mpos).Value;
 
-                CourseClass cc1 = this.ClassTable.ElementAt(mpos).Key;
+                // 课堂
+                CourseClass cc1 = this.ScheduledClasses.ElementAt(mpos).Key;
 
                 // determine position of class randomly
+                // 随机决定课堂新的时间槽
+
+                // 教师数
                 int nr = Configuration.GetInstance().Classrooms.Count;
+
+                // 课堂节数
                 int dur = cc1.Duration;
+
+                // 第几个工作日
                 int day = Rand() % DAYS_NUM;
+
+                // 第几个教室
                 int room = Rand() % nr;
+
+                // 第几节课开始上
                 int time = Rand() % (DAY_HOURS + 1 - dur);
+
+                // 得到新的时间槽
                 int pos2 = day * nr * DAY_HOURS + room * DAY_HOURS + time;
 
                 // move all time-space slots
+                // 移动该课堂的每一节课
                 for (int j = dur - 1; j >= 0; j--)
                 {
                     // remove class hour from current time-space slot
-                    List<CourseClass> cl = this.slots[pos1 + i];
+                    // 将课堂从现在的时间槽里删除
+                    List<CourseClass> cl = this.slots[pos1 + j];
                     foreach (CourseClass c in cl)
                     {
                         if (c == cc1)
@@ -375,13 +398,16 @@ namespace ClassScheduler.Algorithm
                     }
 
                     // move class hour to new time-space slot
-                    this.slots.ElementAt(pos2 + i).Add(cc1);
+                    // 放入新的时间槽
+                    this.slots.ElementAt(pos2 + j).Add(cc1);
                 }
 
                 // change entry of class table to point to new time-space slots
-                this.ClassTable[cc1] = pos2;
+                // 保存课堂的新时间槽
+                this.ScheduledClasses[cc1] = pos2;
             }
 
+            // 重新计算适应度
             CalculateFitness();
         }
 
@@ -409,9 +435,9 @@ namespace ClassScheduler.Algorithm
             // 教室的设施能够满足课堂要求得1分
             // 教师同一时间上一堂课得1分
             // 学生组同一时间上一堂课得1分
-            for (int idx = 0; idx < this.ClassTable.Count; idx++, ci += 5)
+            for (int idx = 0; idx < this.ScheduledClasses.Count; idx++, ci += 5)
             {
-                var pair = this.ClassTable.ElementAt(idx);
+                var pair = this.ScheduledClasses.ElementAt(idx);
                 CourseClass cc = pair.Key;    // 课堂
                 int p = pair.Value;           // 课堂的大排行序号
 
@@ -524,7 +550,7 @@ namespace ClassScheduler.Algorithm
             }
 
             // calculate fitess value based on score
-            this.Fitness = (float)score / (Configuration.GetInstance().CourseClasses.Count * DAYS_NUM);
+            this.Fitness = (float)score / (Configuration.GetInstance().CourseClasses.Count * 5);
         }
 
         #endregion

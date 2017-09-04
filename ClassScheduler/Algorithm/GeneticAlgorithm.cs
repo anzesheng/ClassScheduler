@@ -310,8 +310,9 @@ namespace ClassScheduler.Algorithm
 
                 // replace chromosomes of current operation with offspring
                 // 用后代替换当前操作中的染色体
-                for (int j = 0; j < this.ReplaceByGeneration; j++)
+                foreach (var os in offspring)
                 {
+                    // 随机取得一个槽位用于替换
                     int ci;
                     do
                     {
@@ -325,7 +326,7 @@ namespace ClassScheduler.Algorithm
 
                     // replace chromosomes
                     // 用后代替换染色体
-                    this.Chromosomes[ci] = offspring[j];
+                    this.Chromosomes[ci] = os;
 
                     // try to add new chromosomes in best chromosome group
                     // 尝试将新染色体放入最优组中
