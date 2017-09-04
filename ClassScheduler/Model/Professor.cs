@@ -21,7 +21,7 @@ namespace ClassScheduler.Model
         /// <summary>
         /// Gets or sets a list of classes that a professor teaches..
         /// </summary>
-        List<CourseClass> TeachClasses { get; set; } = new List<CourseClass>();
+        public List<CourseClass> TeachClasses { get; set; } = new List<CourseClass>();
 
         public Professor(int id, string name)
         {

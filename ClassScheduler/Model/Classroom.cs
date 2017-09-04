@@ -22,7 +22,7 @@ namespace ClassScheduler.Model
         {
             this.Id = nextRoomId++;
             this.Name = name;
-            this.HasComputers = HasComputers;
+            this.HasComputers = hasComputers;
             this.NumberOfSeats = numberOfSeats;
         }
 

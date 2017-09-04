@@ -282,7 +282,7 @@ namespace ClassScheduler.Algorithm
 
                 // algorithm has reached criteria?
                 // 如果当前最优染色体已经是最优，结束计算
-                if (best.Fitness >= 1)
+                if (best.Fitness >= 1 || this.currentGeneration > 100000)
                 {
                     this.state = AlgorithmState.AS_CRITERIA_STOPPED;
                     //lock.Unlock();

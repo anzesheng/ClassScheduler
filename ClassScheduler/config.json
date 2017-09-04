@@ -211,14 +211,14 @@
             "Course": 4,
             "Duration": 2,
             "StudentsGroups": [ 1, 2 ],
-            "RequireComputers": true
+            "RequireComputers": false
         },
         {
             "Professor": 4,
             "Course": 4,
             "Duration": 2,
             "StudentsGroups": [ 3, 4 ],
-            "RequireComputers": true
+            "RequireComputers": false
         },
         {
             "Professor": 1,

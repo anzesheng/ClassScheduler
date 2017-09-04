@@ -126,6 +126,7 @@ namespace ClassScheduler.Algorithm
                         duration, groupsInClass, requireComputers);
 
                     this.CourseClasses.Add(cc);
+                    this.Professors[professorId].TeachClasses.Add(cc);
                 }
 
                 this.IsEmpty = false;
