@@ -183,6 +183,11 @@ namespace ClassScheduler.Algorithm
             return this.Classrooms.ContainsKey(id) ? this.Classrooms[id] : null;
         }
 
+        public CourseClass GetClassById(int id)
+        {
+            return this.CourseClasses.FirstOrDefault(c => c.Id == id);
+        }
+
         // Returns TRUE if configuration is not parsed yet
 
         #endregion

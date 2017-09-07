@@ -63,6 +63,7 @@
     <Compile Include="Model\Course.cs" />
     <Compile Include="Model\Professor.cs" />
     <Compile Include="Algorithm\Schedule.cs" />
+    <Compile Include="Model\Slot.cs" />
     <Compile Include="Model\StudentsGroup.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

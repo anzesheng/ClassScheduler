@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using ClassScheduler.Algorithm;
+using System.Collections.Generic;
 
 namespace ClassScheduler.Model
 {
@@ -36,6 +37,9 @@ namespace ClassScheduler.Model
         #endregion
 
         #region Properties
+
+        // 课堂的编号
+        public int Id { get; set; }
 
         /// <summary>
         /// Gets or sets the courset which the class belongs.
@@ -89,6 +93,17 @@ namespace ClassScheduler.Model
 
         #region Methods
 
+        public bool GroupsOverlap(int classId)
+        {
+            var c = Configuration.GetInstance().GetClassById(classId);
+            if (c == null)
+            {
+                return false;
+            }
+
+            return this.GroupsOverlap(c);
+        }
+
         // Returns TRUE if another class has one or overlapping student groups.
         // 如果有班级需要同时上另一节课，返回true。（表示冲突了）
         public bool GroupsOverlap(CourseClass c)
@@ -105,6 +120,12 @@ namespace ClassScheduler.Model
             }
 
             return false;
+        }
+
+        public bool ProfessorOverlaps(int classId)
+        {
+            var c = Configuration.GetInstance().GetClassById(classId);
+            return this.Professor == c?.Professor;
         }
 
         // Returns TRUE if another class has same professor.
