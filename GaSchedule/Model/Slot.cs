@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 
-namespace ClassScheduler.Model
+namespace GaSchedule.Model
 {
     /// <summary>
     /// 在一个排课周期中用于排课的槽位。

@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace ClassScheduler.Model
+namespace GaSchedule.Model
 {
     public class Course
     {

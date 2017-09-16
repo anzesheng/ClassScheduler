@@ -1,20 +1,20 @@
-﻿using ClassScheduler.Model;
+﻿using GaSchedule.Model;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace ClassScheduler.Algorithm
+namespace GaSchedule.Algorithm
 {
     /// <summary>
     /// 本遗传算法中的染色体（基因串）
     /// </summary>
     public class Schedule
     {
-        // Number of working hours per day
-        public const int DAY_HOURS = 12;
+        //// Number of working hours per day
+        //public const int ClassNumberPerDay = 12;
 
-        // Number of days in week
-        public const int DAYS_NUM = 5;
+        //// Number of days in week
+        //public const int WorkingDaysNumber = 5;
 
         private Random random = new Random();
 
@@ -26,21 +26,9 @@ namespace ClassScheduler.Algorithm
 
         #region Fields
 
-        // Number of crossover points of parent's class tables
-        // 多点杂交中交换点的数量
-        private int numberOfCrossoverPoints;
+        private readonly Configuration configuration;
 
-        // Number of classes that is moved randomly by single mutation operation
-        // 一次突变中随机移动的课堂的数量
-        private int mutationSize;
 
-        // Probability that crossover will occure
-        // 交叉发生的概率
-        private int crossoverProbability;
-
-        // Probability that mutation will occure
-        // 突变发生的概率
-        private int mutationProbability;
 
         // Fitness value of chromosome
         // 染色体的适应度
@@ -93,17 +81,10 @@ namespace ClassScheduler.Algorithm
         /// <param name="mutationSize">突变的数量</param>
         /// <param name="crossoverProbability">杂交的可能性</param>
         /// <param name="mutationProbability">突变的可能性</param>
-        public Schedule(int numberOfCrossoverPoints, int mutationSize,
-            int crossoverProbability, int mutationProbability)
+        public Schedule(Configuration configuration)
         {
-            this.numberOfCrossoverPoints = numberOfCrossoverPoints;
-            this.mutationSize = mutationSize;
-            this.crossoverProbability = crossoverProbability;
-            this.mutationProbability = mutationProbability;
+            this.configuration = configuration;
             this.Fitness = 0;
-
-            // 一个教学周期（一般是一周）内能够安排的课程的总数
-            var totalSlots = DAYS_NUM * DAY_HOURS * Configuration.GetInstance().Classrooms.Count;
 
             // 准备好时间槽容器，数组初始化会调用Slot的默认构造函数
             this.InitialSlots();
@@ -112,7 +93,7 @@ namespace ClassScheduler.Algorithm
 
             // reserve space for flags of class requirements
             // 每堂课有5个衡量指标
-            int criteriaNum = Configuration.GetInstance().CourseClasses.Count * 5;
+            int criteriaNum = this.configuration.CourseClasses.Count * 5;
             this.criteria = new bool[criteriaNum];
         }
 
@@ -123,12 +104,11 @@ namespace ClassScheduler.Algorithm
         {
             this.slots = new List<Slot>();
 
-            for (int d = 0; d < DAYS_NUM; d++)
+            for (int d = 0; d < this.configuration.WorkingDaysNumber; d++)
             {
-                var rooms = Configuration.GetInstance().Classrooms;
-                for (int r = 0; r < rooms.Count; r++)
+                for (int r = 0; r < this.configuration.Classrooms.Count; r++)
                 {
-                    for (int c = 0; c < DAY_HOURS; c++)
+                    for (int c = 0; c < this.configuration.ClassNumberPerDay; c++)
                     {
                         this.slots.Add(new Slot(d, r, c));
                     }
@@ -145,11 +125,11 @@ namespace ClassScheduler.Algorithm
         /// <param name="setupOnly">是否只拷贝size。True时只拷贝size，不拷贝内容。</param>
         public Schedule(Schedule schedule, bool setupOnly)
         {
-            
+            this.configuration = schedule.configuration;
 
             // reserve space for flags of class requirements
             // 准备好标准数组（因为每个课堂有5个评价标准，所以乘以5）
-            int totalCriteriaItems = Configuration.GetInstance().CourseClasses.Count * 5;
+            int totalCriteriaItems = this.configuration.CourseClasses.Count * 5;
             this.criteria = new bool[totalCriteriaItems];
 
 
@@ -188,13 +168,6 @@ namespace ClassScheduler.Algorithm
                 // 拷贝适应性
                 this.Fitness = schedule.Fitness;
             }
-
-            // copy parameters
-            // 拷贝其他参数
-            this.numberOfCrossoverPoints = schedule.numberOfCrossoverPoints;
-            this.mutationSize = schedule.mutationSize;
-            this.crossoverProbability = schedule.crossoverProbability;
-            this.mutationProbability = schedule.mutationProbability;
         }
 
         // Makes copy ot chromosome
@@ -214,7 +187,7 @@ namespace ClassScheduler.Algorithm
 
             // place classes at random position
             // 获取所有需要上的课
-            List<CourseClass> classes = Configuration.GetInstance().CourseClasses;
+            List<CourseClass> classes = this.configuration.CourseClasses;
 
             // 将每一个需要上的课随机地排到一间教室的一个或多个时段里
             foreach (CourseClass c in classes)
@@ -223,23 +196,25 @@ namespace ClassScheduler.Algorithm
                 // 随机确定课堂的位置
 
                 // 教室总数
-                int numberOfRooms = Configuration.GetInstance().Classrooms.Count;
+                //int numberOfRooms = this.configuration.Classrooms.Count;
 
                 // 当前课堂的时长
                 int dur = c.Duration;
 
                 // 随机确定在第几个工作日上课
-                int day = this.Rand() % DAYS_NUM;
+                int day = this.Rand() % this.configuration.WorkingDaysNumber;
 
                 // 随机确定使用第几间教室
-                int room = this.Rand() % numberOfRooms;
+                int room = this.Rand() % this.configuration.Classrooms.Count;
 
                 // 随机选择一个上课时段
-                int time = this.Rand() % (DAY_HOURS + 1 - dur);
+                int time = this.Rand() % (this.configuration.ClassNumberPerDay + 1 - dur);
 
                 // 计算出本课堂的时间槽序号，即在总课堂列表中的位置
                 // 总课程列表：上课日数×每日课时数×教室数
-                int pos = day * numberOfRooms * DAY_HOURS + room * DAY_HOURS + time;
+                int pos = day * this.configuration.Classrooms.Count * this.configuration.ClassNumberPerDay
+                    + room * this.configuration.ClassNumberPerDay
+                    + time;
 
                 // fill time-space slots, for each hour of class
                 // 在当前教室的指定时段上排课，有的课堂需要占用多个时段
@@ -264,6 +239,8 @@ namespace ClassScheduler.Algorithm
 
         #region Properties
 
+
+
         #endregion
 
         #region Members
@@ -274,7 +251,7 @@ namespace ClassScheduler.Algorithm
         {
             // check probability of crossover operation
             // 看看这次是否需要杂交，如果不需要
-            if (this.Rand() % 100 > this.crossoverProbability)
+            if (this.Rand() % 100 > this.configuration.Parameters.CrossoverProbability)
             {
                 // no crossover, just copy first parent
                 // 不进行杂交，而是直接复制和返回第一个父本
@@ -290,7 +267,7 @@ namespace ClassScheduler.Algorithm
 
             // determine crossover point (randomly)
             // 随机选择指定数量的交换点
-            for (int i = this.numberOfCrossoverPoints; i > 0; i--)
+            for (int i = this.configuration.Parameters.NumberOfCrossoverPoints; i > 0; i--)
             {
                 while (true)
                 {
@@ -347,7 +324,7 @@ namespace ClassScheduler.Algorithm
         {
             // check probability of mutation operation
             // 检查是否需要变异
-            if (Rand() % 100 > mutationProbability)
+            if (Rand() % 100 > this.configuration.Parameters.MutationProbability)
             {
                 return;
             }
@@ -358,7 +335,7 @@ namespace ClassScheduler.Algorithm
 
             // move selected number of classes at random position
             // 随机移动指定数量课堂的时间槽
-            for (int i = mutationSize; i > 0; i--)
+            for (int i = this.configuration.Parameters.MutationSize; i > 0; i--)
             {
                 // select ranom chromosome for movement
                 // 随机选择一个染色体
@@ -374,23 +351,20 @@ namespace ClassScheduler.Algorithm
                 // determine position of class randomly
                 // 随机决定课堂新的时间槽
 
-                // 教师数
-                int nr = Configuration.GetInstance().Classrooms.Count;
-
                 // 课堂节数
                 int dur = cc1.Duration;
 
                 // 第几个工作日
-                int day = Rand() % DAYS_NUM;
+                int day = Rand() % this.configuration.WorkingDaysNumber;
 
                 // 第几个教室
-                int room = Rand() % nr;
+                int room = Rand() % this.configuration.Classrooms.Count;
 
                 // 第几节课开始上
-                int time = Rand() % (DAY_HOURS + 1 - dur);
+                int time = Rand() % (this.configuration.ClassNumberPerDay + 1 - dur);
 
                 // 得到新的时间槽
-                int pos2 = day * nr * DAY_HOURS + room * DAY_HOURS + time;
+                int pos2 = day * this.configuration.Classrooms.Count * this.configuration.ClassNumberPerDay + room * this.configuration.ClassNumberPerDay + time;
 
                 // move all time-space slots
                 // 移动该课堂的每一节课
@@ -423,10 +397,10 @@ namespace ClassScheduler.Algorithm
             int score = 0;
 
             // 教室数
-            int numberOfRooms = Configuration.GetInstance().Classrooms.Count;
+            int numberOfRooms = this.configuration.Classrooms.Count;
 
             // 每日可用课堂数（每日课时数*教室数）
-            int daySize = DAY_HOURS * numberOfRooms;
+            int daySize = this.configuration.ClassNumberPerDay * numberOfRooms;
 
             // 标准的序号，每个课堂有5个评价标准，所有课堂的所有指标被顺序放在一个数组中
             int ci = 0;
@@ -447,8 +421,8 @@ namespace ClassScheduler.Algorithm
                 // coordinate of time-space slot
                 int day = p / daySize;        // 第几个工作日
                 int time = p % daySize;       // 当日的课次编号（按当日所有课堂排序）
-                int room = time / DAY_HOURS;  // 第几间教室
-                time = time % DAY_HOURS;      // 当日的第几时段
+                int room = time / this.configuration.ClassNumberPerDay;  // 第几间教室
+                time = time % this.configuration.ClassNumberPerDay;      // 当日的第几时段
 
                 // check for room overlapping of classes
                 // 检查教室重合
@@ -472,7 +446,7 @@ namespace ClassScheduler.Algorithm
                 this.criteria[ci + 0] = !ro;
 
 
-                Classroom r = Configuration.GetInstance().GetRoomById(room);
+                Classroom r = this.configuration.GetRoomById(room);
 
                 // does current room have enough seats
                 // 当前教室的座位是否足够，如果足够加1分
@@ -498,7 +472,7 @@ namespace ClassScheduler.Algorithm
 
                 // check overlapping of classes for professors and student groups
                 // 检查教师和学生是否同时上多于一个课堂
-                for (int num = numberOfRooms, t = firstClassNo; num > 0; num--, t += DAY_HOURS)
+                for (int num = numberOfRooms, t = firstClassNo; num > 0; num--, t += this.configuration.ClassNumberPerDay)
                 {
                     // for each hour of class
                     // 遍历当前课堂的每一个时段
@@ -511,14 +485,16 @@ namespace ClassScheduler.Algorithm
                         {
                             if (cc.Id != classId)
                             {
-                                // professor overlaps?
-                                if (!po && cc.ProfessorOverlaps(classId))
+                                var anotherCalss = this.configuration.GetClassById(classId);
+
+                                // teacher overlaps?
+                                if (!po && cc.TeacherOverlaps(anotherCalss))
                                 {
                                     po = true;
                                 }
 
                                 // student group overlaps?
-                                if (!go && cc.GroupsOverlap(classId))
+                                if (!go && cc.StudentsGroupsOverlap(anotherCalss))
                                 {
                                     go = true;
                                 }
@@ -553,7 +529,7 @@ namespace ClassScheduler.Algorithm
             }
 
             // calculate fitess value based on score
-            this.Fitness = (float)score / (Configuration.GetInstance().CourseClasses.Count * 5);
+            this.Fitness = (float)score / (this.configuration.CourseClasses.Count * 5);
         }
 
         #endregion

@@ -1,7 +1,7 @@
-﻿using ClassScheduler.Algorithm;
+﻿using GaSchedule.Algorithm;
 using System.Collections.Generic;
 
-namespace ClassScheduler.Model
+namespace GaSchedule.Model
 {
     /// <summary>
     /// 一堂课
@@ -10,11 +10,11 @@ namespace ClassScheduler.Model
     {
         #region Constructors
 
-        public CourseClass(Course course, Professor professor, int duration,
+        public CourseClass(Course course, Teacher teacher, int duration,
             List<StudentsGroup> groups, bool requireComputers)
         {
             this.Course = course;
-            this.Professor = professor;
+            this.Teacher = teacher;
             this.Duration = duration;
             this.StudentsGroups = groups;
             this.RequireComputers = requireComputers;
@@ -23,7 +23,7 @@ namespace ClassScheduler.Model
         public CourseClass(CourseClass c)
         {
             this.Course = c.Course;
-            this.Professor = c.Professor;
+            this.Teacher = c.Teacher;
             this.Duration = c.Duration;
             this.StudentsGroups = new List<StudentsGroup>();
             foreach (var g in c.StudentsGroups)
@@ -48,10 +48,10 @@ namespace ClassScheduler.Model
         public Course Course { get; set; }
 
         /// <summary>
-        /// Gets or sets the professor who teaches.
+        /// Gets or sets the teacher who teaches.
         /// 任课教师
         /// </summary>
-        public Professor Professor { get; set; }
+        public Teacher Teacher { get; set; }
 
         /// <summary>
         /// Gets or sets the list of student groups that attend the class.
@@ -93,20 +93,9 @@ namespace ClassScheduler.Model
 
         #region Methods
 
-        public bool GroupsOverlap(int classId)
-        {
-            var c = Configuration.GetInstance().GetClassById(classId);
-            if (c == null)
-            {
-                return false;
-            }
-
-            return this.GroupsOverlap(c);
-        }
-
         // Returns TRUE if another class has one or overlapping student groups.
         // 如果有班级需要同时上另一节课，返回true。（表示冲突了）
-        public bool GroupsOverlap(CourseClass c)
+        public bool StudentsGroupsOverlap(CourseClass c)
         {
             foreach (var g1 in this.StudentsGroups)
             {
@@ -122,17 +111,11 @@ namespace ClassScheduler.Model
             return false;
         }
 
-        public bool ProfessorOverlaps(int classId)
-        {
-            var c = Configuration.GetInstance().GetClassById(classId);
-            return this.Professor == c?.Professor;
-        }
-
-        // Returns TRUE if another class has same professor.
+        // Returns TRUE if another class has same teacher.
         // 如果教师要同时上另一节课，返回true。（表示冲突了）
-        public bool ProfessorOverlaps(CourseClass c)
+        public bool TeacherOverlaps(CourseClass c)
         {
-            return this.Professor == c.Professor;
+            return this.Teacher == c.Teacher;
         }
 
         #endregion

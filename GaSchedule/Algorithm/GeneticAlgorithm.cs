@@ -1,11 +1,12 @@
-﻿using ClassScheduler.Model;
+﻿using GaSchedule.Model;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace ClassScheduler.Algorithm
+namespace GaSchedule.Algorithm
 {
 
     public enum AlgorithmState
@@ -42,10 +43,6 @@ namespace ClassScheduler.Algorithm
         // 当前选出的最优染色体的数量，初值为0，在计算过程中会发生变化
         private int currentBestSize;
 
-        // Number of chromosomes which are replaced in each generation by offspring
-        // 每代中被后代替换的染色体的数量
-        public int ReplaceByGeneration { get; set; }
-
         private ScheduleObserver observer;
 
         // Prototype of chromosomes in population
@@ -60,64 +57,6 @@ namespace ClassScheduler.Algorithm
         // 算法的执行状态
         private AlgorithmState state;
 
-        // Synchronization of algorithm's state
-        //private CCriticalSection _stateSect;
-
-        // Pointer to global instance of algorithm
-        // 本算法类的全局实例
-        static GeneticAlgorithm instance;
-
-        // Synchronization of creation and destruction of global instance
-        //static CCriticalSection _instanceSect;
-
-        #endregion
-
-        #region Constructors and Destructors
-
-        // Returns reference to global instance of algorithm
-        // 返回算法的全局实例
-        public static GeneticAlgorithm GetInstance()
-        {
-            if (instance == null)
-            {
-                // set seed for random generator
-                //srand(GetTickCount());
-
-                // make prototype of chromosomes
-                // 创建染色体原型:
-                //  (1) 交换点数: 2
-                //  (2) 突变点数: 2
-                //  (3) 杂交概率: 80
-                //  (4) 突变概率: 3
-                Schedule prototype = new Schedule(2, 2, 80, 3);
-
-                // make new global instance of algorithm using chromosome prototype
-                // 使用染色体原型创建算法实例：
-                //  (1) 族群中有100个染色体
-                //  (2) 每次有8个染色体会被后代替换掉
-                //  (3) 只追踪5个最优解
-                instance = new GeneticAlgorithm(100, 8, 5, prototype, new ScheduleObserver());
-            }
-
-            return instance;
-        }
-
-        // Frees memory used by gloval instance
-        public static void FreeInstance()
-        {
-            //CSingleLock lock (&_instanceSect, TRUE );
-
-            // free memory used by global instance if it exists
-            //if (instance != null)
-            //{
-            //    delete _instance->_prototype;
-            //    delete _instance->_observer;
-            //    delete _instance;
-
-            //    _instance = NULL;
-            //}
-        }
-
         /// <summary>
         /// Initializes a new instance of the genetic algorithm class.
         /// 初始化算法
@@ -127,49 +66,27 @@ namespace ClassScheduler.Algorithm
         /// <param name="trackBest">The track best.</param>
         /// <param name="prototype">The prototype.原型染色体</param>
         /// <param name="observer">The observer.观察者</param>
-        public GeneticAlgorithm(int numberOfChromosomes, int replaceByGeneration, int trackBest,
-            Schedule prototype, ScheduleObserver observer)
+        public GeneticAlgorithm(Configuration configuration, ScheduleObserver observer)
         {
-            this.ReplaceByGeneration = replaceByGeneration;
-            this.currentBestSize = 0;
-            this.prototype = prototype;
+            this.configuration = configuration;
             this.observer = observer;
+
+            this.currentBestSize = 0;
             this.currentGeneration = 0;
             this.state = AlgorithmState.AS_USER_STOPED;
 
-            // there should be at least 2 chromosomes in population
-            // 族群中至少要有两个染色体
-            if (numberOfChromosomes < 2)
-            {
-                numberOfChromosomes = 2;
-            }
-
-            // and algorithm should track at least on of best chromosomes
-            // 至少要跟踪一个最优解
-            if (trackBest < 1)
-            {
-                trackBest = 1;
-            }
-
-            // 每代至少替换一个染色体
-            if (this.ReplaceByGeneration < 1)
-            {
-                this.ReplaceByGeneration = 1;
-            }
-            else if (replaceByGeneration > numberOfChromosomes - trackBest)
-            {
-                // 如果每代替换的染色体数大于染色体总数与最优染色体数之差，则将替换数修改为差
-                replaceByGeneration = numberOfChromosomes - trackBest;
-            }
+            // make prototype of chromosomes
+            // 创建染色体原型
+            this.prototype = new Schedule(this.configuration);
 
             // reserve space for population
             // 为族群保留空间
-            this.Chromosomes = new Schedule[numberOfChromosomes];
-            this.BestFlags = new bool[numberOfChromosomes];
+            this.Chromosomes = new Schedule[this.configuration.Parameters.NumberOfChromosomes];
+            this.BestFlags = new bool[this.configuration.Parameters.NumberOfChromosomes];
 
             // reserve space for best chromosome group
             // 初始化最优染色体索引
-            this.bestChromosomes = new int[trackBest];
+            this.bestChromosomes = new int[this.configuration.Parameters.TrackBestNumber];
 
             // clear population
             // 清空族群
@@ -190,6 +107,8 @@ namespace ClassScheduler.Algorithm
         #endregion
 
         #region Properties
+
+        public Configuration configuration { get; set; }
 
         // Returns pointer to best chromosomes in population
         // 获得最优染色体
@@ -282,7 +201,7 @@ namespace ClassScheduler.Algorithm
 
                 // algorithm has reached criteria?
                 // 如果当前最优染色体已经是最优，结束计算
-                if (best.Fitness >= 1 || this.currentGeneration > 100000)
+                if (best.Fitness >= 1 || this.currentGeneration > 10000)
                 {
                     this.state = AlgorithmState.AS_CRITERIA_STOPPED;
                     //lock.Unlock();
@@ -293,8 +212,8 @@ namespace ClassScheduler.Algorithm
 
                 // produce offspring
                 // 按需要替换的染色体生产相应数量的后代
-                Schedule[] offspring = new Schedule[this.ReplaceByGeneration];
-                for (int j = 0; j < this.ReplaceByGeneration; j++)
+                Schedule[] offspring = new Schedule[this.configuration.Parameters.ReplaceByGeneration];
+                for (int j = 0; j < this.configuration.Parameters.ReplaceByGeneration; j++)
                 {
                     // selects parent randomly
                     // 在当前的族群中随机选取两个染色体作为双亲
@@ -336,14 +255,14 @@ namespace ClassScheduler.Algorithm
                 // algorithm has found new best chromosome
                 // 如果算法获得了更好的染色体
                 var newBest = this.GetBestChromosome();
-                if (best != newBest && this.observer!=null)
+                if (best != newBest && this.observer != null)
                     // notify observer
                     this.observer.NewBestChromosome(newBest);
 
                 this.currentGeneration++;
             }
 
-            if (this.observer!=null)
+            if (this.observer != null)
                 // notify observer that execution of algorithm has changed it state
                 this.observer.EvolutionStateChanged(state);
         }

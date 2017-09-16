@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace ClassScheduler.Algorithm
+namespace GaSchedule.Algorithm
 {
     public class ScheduleObserver
     {
