@@ -116,7 +116,17 @@
             "NumberOfSeats": 24
         },
         {
-            "Name": "R7",
+            "Name": "R4",
+            "HasComputers": false,
+            "NumberOfSeats": 60
+        }
+        {
+            "Name": "R5",
+            "HasComputers": true,
+            "NumberOfSeats": 24
+        },
+        {
+            "Name": "R6",
             "HasComputers": false,
             "NumberOfSeats": 60
         }

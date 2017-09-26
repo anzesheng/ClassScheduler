@@ -17,53 +17,28 @@ namespace GaSchedule.Algorithm
 
             //try
             //{
-                JObject o = JObject.Parse(File.ReadAllText(fileName));
+            JObject o = JObject.Parse(File.ReadAllText(fileName));
 
-                var professors = o.GetValue("Teachers")?.ToObject<Teacher[]>();
-                foreach (var p in professors)
-                {
-                    configuration.Teachers[p.Id] = p;
-                }
+            configuration.Teachers = o.GetValue("Teachers")?.ToObject<List<Teacher>>();
+            configuration.StudentsGroups = o.GetValue("StudentsGroups")?.ToObject<List<StudentsGroup>>();
+            configuration.Courses = o.GetValue("Courses")?.ToObject<List<Course>>();
+            configuration.Classrooms = o.GetValue("Classrooms")?.ToObject<List<Classroom>>();
 
-                var groups = o.GetValue("StudentsGroups")?.ToObject<StudentsGroup[]>();
-                foreach (var g in groups)
-                {
-                    configuration.StudentsGroups[g.Id] = g;
-                }
+            var classTokens = o.GetValue("CourseClasses").ToArray();
+            foreach (var token in classTokens)
+            {
+                int teacherId = token.Value<int>("Teacher");
+                int courseId = token.Value<int>("Course");
+                int duration = token.Value<int>("Duration");
+                int[] groupIds = token["StudentsGroups"].ToObject<int[]>();
+                bool requireComputers = token.Value<bool?>("RequireComputers") ?? false;
 
-                var courses = o.GetValue("Courses")?.ToObject<Course[]>();
-                foreach (var c in courses)
-                {
-                    configuration.Courses[c.Id] = c;
-                }
+                var cc = new CourseClass(configuration, courseId, teacherId, duration, groupIds.ToList(), requireComputers);
 
-                var rooms = o.GetValue("Classrooms")?.ToObject<Classroom[]>();
-                foreach (var r in rooms)
-                {
-                    configuration.Classrooms[r.Id] = r;
-                }
-
-                var classTokens = o.GetValue("CourseClasses").ToArray();
-                foreach (var token in classTokens)
-                {
-                    int professorId = token.Value<int>("Teacher");
-                    int courseId = token.Value<int>("Course");
-                    int duration = token.Value<int>("Duration");
-                    int[] groupIds = token["StudentsGroups"].ToObject<int[]>();
-                    bool requireComputers = token.Value<bool?>("RequireComputers") ?? false;
-
-                    var groupsInClass = new List<StudentsGroup>();
-                    foreach (var id in groupIds)
-                    {
-                        groupsInClass.Add(configuration.StudentsGroups[id]);
-                    }
-
-                    var cc = new CourseClass(configuration.Courses[courseId], configuration.Teachers[professorId],
-                        duration, groupsInClass, requireComputers);
-
-                    configuration.CourseClasses.Add(cc);
-                    configuration.Teachers[professorId].TeachClasses.Add(cc);
-                }
+                configuration.CourseClasses.Add(cc);
+                var teacher = configuration.Teachers.FirstOrDefault(t => t.Id == teacherId);
+                teacher.TeachClasses.Add(cc);
+            }
             //}
             //catch (Exception e)
             //{

@@ -446,7 +446,7 @@ namespace GaSchedule.Algorithm
                 this.criteria[ci + 0] = !ro;
 
 
-                Classroom r = this.configuration.GetRoomById(room);
+                Classroom r = this.configuration.Classrooms[room];
 
                 // does current room have enough seats
                 // 当前教室的座位是否足够，如果足够加1分
@@ -485,7 +485,7 @@ namespace GaSchedule.Algorithm
                         {
                             if (cc.Id != classId)
                             {
-                                var anotherCalss = this.configuration.GetClassById(classId);
+                                var anotherCalss = this.configuration.CourseClasses[classId];
 
                                 // teacher overlaps?
                                 if (!po && cc.TeacherOverlaps(anotherCalss))

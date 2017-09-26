@@ -1,5 +1,7 @@
 ﻿using GaSchedule.Algorithm;
 using System.Collections.Generic;
+using System.Linq;
+using System.Text;
 
 namespace GaSchedule.Model
 {
@@ -10,9 +12,15 @@ namespace GaSchedule.Model
     {
         #region Constructors
 
-        public CourseClass(Course course, Teacher teacher, int duration,
-            List<StudentsGroup> groups, bool requireComputers)
+        private static int index = 0;
+
+        private Configuration configuration;
+
+        public CourseClass(Configuration configuration, int course, int teacher, int duration,
+            List<int> groups, bool requireComputers)
         {
+            this.configuration = configuration;
+            this.Id = index++;
             this.Course = course;
             this.Teacher = teacher;
             this.Duration = duration;
@@ -20,44 +28,43 @@ namespace GaSchedule.Model
             this.RequireComputers = requireComputers;
         }
 
-        public CourseClass(CourseClass c)
-        {
-            this.Course = c.Course;
-            this.Teacher = c.Teacher;
-            this.Duration = c.Duration;
-            this.StudentsGroups = new List<StudentsGroup>();
-            foreach (var g in c.StudentsGroups)
-            {
-                this.StudentsGroups.Add(g);
-            }
-
-            this.RequireComputers = c.RequireComputers;
-        }
-
         #endregion
 
         #region Properties
 
         // 课堂的编号
-        public int Id { get; set; }
+        public int Id { get; }
 
         /// <summary>
         /// Gets or sets the courset which the class belongs.
-        /// 课程信息
+        /// 课程ID
         /// </summary>
-        public Course Course { get; set; }
+        public int Course { get; set; }
 
         /// <summary>
         /// Gets or sets the teacher who teaches.
         /// 任课教师
         /// </summary>
-        public Teacher Teacher { get; set; }
+        public int Teacher { get; set; }
 
         /// <summary>
         /// Gets or sets the list of student groups that attend the class.
         /// 上课的班级列表，因为有可能上合班课，所以是列表。
         /// </summary>
-        public List<StudentsGroup> StudentsGroups { get; set; } = new List<StudentsGroup>();
+        public List<int> StudentsGroups { get; set; } = new List<int>();
+
+        public string StudentsGroupsString
+        {
+            get
+            {
+                StringBuilder sb = new StringBuilder();
+                foreach (var id in this.StudentsGroups)
+                {
+                    sb.Append($"{id.ToString()}&");
+                }
+                return sb.ToString();
+            }
+        }
 
         /// <summary>
         /// Gets the number of seats (sum of student groups' sizes) are needed in the classroom.
@@ -68,8 +75,9 @@ namespace GaSchedule.Model
             get
             {
                 int count = 0;
-                foreach (var group in this.StudentsGroups)
+                foreach (var id in this.StudentsGroups)
                 {
+                    var group = this.configuration.StudentsGroups.FirstOrDefault(g => g.Id == id);
                     count += group.NumberOfStudents;
                 }
 

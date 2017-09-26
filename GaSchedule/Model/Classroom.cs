@@ -33,7 +33,7 @@ namespace GaSchedule.Model
         /// <summary>
         /// Gets or sets the identifier of the class room.
         /// </summary>
-        public int Id { get; set; }
+        private int Id { get; set; }
 
         /// <summary>
         /// Gets or sets the name of the class room.

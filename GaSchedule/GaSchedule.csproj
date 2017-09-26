@@ -47,6 +47,7 @@
     <Compile Include="Algorithm\Configuration.cs" />
     <Compile Include="Algorithm\ConfigurationFactory.cs" />
     <Compile Include="Algorithm\GeneticAlgorithm.cs" />
+    <Compile Include="Algorithm\ResultAnalyzer.cs" />
     <Compile Include="Algorithm\Schedule.cs" />
     <Compile Include="Algorithm\ScheduleObserver.cs" />
     <Compile Include="Model\Classroom.cs" />

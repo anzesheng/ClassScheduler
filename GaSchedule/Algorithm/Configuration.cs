@@ -44,16 +44,16 @@ namespace GaSchedule.Algorithm
         public AlgorithmParameters Parameters { get; set; }
 
         // Parsed professors
-        public Dictionary<int, Teacher> Teachers { get; set; } = new Dictionary<int, Teacher>();
+        public List<Teacher> Teachers { get; set; } = new List<Teacher>();
 
         // Parsed student groups
-        public Dictionary<int, StudentsGroup> StudentsGroups { get; set; } = new Dictionary<int, StudentsGroup>();
+        public List<StudentsGroup> StudentsGroups { get; set; } = new List<StudentsGroup>();
 
         // Parsed courses
-        public Dictionary<int, Course> Courses { get; set; } = new Dictionary<int, Course>();
+        public List<Course> Courses { get; set; } = new List<Course>();
 
         // Parsed rooms
-        public Dictionary<int, Classroom> Classrooms { get; set; } = new Dictionary<int, Classroom>();
+        public List<Classroom> Classrooms { get; set; } = new List<Classroom>();
 
         // Parsed classes
         // 待排的课程，由算法使用者提供
@@ -73,39 +73,6 @@ namespace GaSchedule.Algorithm
         #endregion
 
         #region Public Methods
-
-        // Returns pointer to teacher with specified ID
-        // If there is no teacher with such ID method returns NULL
-        public Teacher GetTeacherById(int id)
-        {
-            return this.Teachers.ContainsKey(id) ? this.Teachers[id] : null;
-        }
-
-        // Returns pointer to student group with specified ID
-        // If there is no student group with such ID method returns NULL
-        public StudentsGroup GetStudentsGroupById(int id)
-        {
-            return this.StudentsGroups.ContainsKey(id) ? this.StudentsGroups[id] : null;
-        }
-
-        // Returns pointer to course with specified ID
-        // If there is no course with such ID method returns NULL
-        public Course GetCourseById(int id)
-        {
-            return this.Courses.ContainsKey(id) ? this.Courses[id] : null;
-        }
-
-        // Returns pointer to room with specified ID
-        // If there is no room with such ID method returns NULL
-        public Classroom GetRoomById(int id)
-        {
-            return this.Classrooms.ContainsKey(id) ? this.Classrooms[id] : null;
-        }
-
-        public CourseClass GetClassById(int id)
-        {
-            return this.CourseClasses.FirstOrDefault(c => c.Id == id);
-        }
 
         public bool VerifyContent()
         {
