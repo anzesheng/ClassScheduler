@@ -8,19 +8,20 @@ namespace GaSchedule.Model
 {
     public class Classroom
     {
-        #region Fields
-
-        // ID counter used to assign IDs automatically
-        private static int nextRoomId = 0;
-
-        #endregion
-
         #region Constructors and destructors
 
-        // Initializes room data and assign ID to room
-        public Classroom(string name, bool hasComputers, int numberOfSeats)
+        public Classroom()
         {
-            this.Id = nextRoomId++;
+            this.Id = -1;
+            this.Name = string.Empty;
+            this.HasComputers = false;
+            this.NumberOfSeats = 0;
+        }
+
+        // Initializes room data and assign ID to room
+        public Classroom(int id, string name, bool hasComputers, int numberOfSeats)
+        {
+            this.Id = id;
             this.Name = name;
             this.HasComputers = hasComputers;
             this.NumberOfSeats = numberOfSeats;
@@ -33,7 +34,7 @@ namespace GaSchedule.Model
         /// <summary>
         /// Gets or sets the identifier of the class room.
         /// </summary>
-        private int Id { get; set; }
+        public int Id { get; set; }
 
         /// <summary>
         /// Gets or sets the name of the class room.
@@ -49,16 +50,6 @@ namespace GaSchedule.Model
         /// Gets or sets a value indicating whether this room has computers.
         /// </summary>
         public bool HasComputers { get; set; }
-
-        #endregion
-
-        #region Static methods
-
-        // Restarts ID assigments
-        public static void RestartIDs()
-        {
-            nextRoomId = 0;
-        }
 
         #endregion
     }

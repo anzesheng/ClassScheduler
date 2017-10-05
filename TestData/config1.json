@@ -111,21 +111,25 @@
     ],
     "Classrooms": [
         {
+		    "Id":0,
             "Name": "R3",
             "HasComputers": true,
             "NumberOfSeats": 24
         },
         {
+		    "Id":1,
             "Name": "R4",
             "HasComputers": false,
             "NumberOfSeats": 60
         },
         {
+		    "Id":2,
             "Name": "R5",
             "HasComputers": true,
             "NumberOfSeats": 24
         },
         {
+		    "Id":3,
             "Name": "R6",
             "HasComputers": false,
             "NumberOfSeats": 60
@@ -140,13 +144,6 @@
             "RequireComputers": false
         },
         {
-            "Teacher": 1,
-            "Course": 1,
-            "Duration": 2,
-            "StudentsGroups": [ 3, 4 ],
-            "RequireComputers": false
-        },
-        {
             "Teacher": 9,
             "Course": 1,
             "Duration": 3,
@@ -157,21 +154,7 @@
             "Teacher": 9,
             "Course": 1,
             "Duration": 3,
-            "StudentsGroups": [ 2 ],
-            "RequireComputers": true
-        },
-        {
-            "Teacher": 9,
-            "Course": 1,
-            "Duration": 3,
             "StudentsGroups": [ 3 ],
-            "RequireComputers": true
-        },
-        {
-            "Teacher": 9,
-            "Course": 1,
-            "Duration": 3,
-            "StudentsGroups": [ 4 ],
             "RequireComputers": true
         },
         {
@@ -182,13 +165,6 @@
             "RequireComputers": false
         },
         {
-            "Teacher": 2,
-            "Course": 2,
-            "Duration": 2,
-            "StudentsGroups": [ 3, 4 ],
-            "RequireComputers": false
-        },
-        {
             "Teacher": 3,
             "Course": 2,
             "Duration": 2,
@@ -207,13 +183,6 @@
             "Course": 2,
             "Duration": 2,
             "StudentsGroups": [ 3 ],
-            "RequireComputers": true
-        },
-        {
-            "Teacher": 3,
-            "Course": 2,
-            "Duration": 2,
-            "StudentsGroups": [ 4 ],
             "RequireComputers": true
         },
         {
@@ -248,13 +217,6 @@
             "Teacher": 7,
             "Course": 5,
             "Duration": 2,
-            "StudentsGroups": [ 1, 2, 3 ],
-            "RequireComputers": false
-        },
-        {
-            "Teacher": 7,
-            "Course": 5,
-            "Duration": 2,
             "StudentsGroups": [ 1, 2 ],
             "RequireComputers": false
         },
@@ -273,13 +235,6 @@
             "RequireComputers": false
         },
         {
-            "Teacher": 8,
-            "Course": 3,
-            "Duration": 2,
-            "StudentsGroups": [ 3 ],
-            "RequireComputers": false
-        },
-        {
             "Teacher": 12,
             "Course": 3,
             "Duration": 2,
@@ -289,13 +244,6 @@
         {
             "Teacher": 12,
             "Course": 3,
-            "Duration": 2,
-            "StudentsGroups": [ 4 ],
-            "RequireComputers": false
-        },
-        {
-            "Teacher": 11,
-            "Course": 7,
             "Duration": 2,
             "StudentsGroups": [ 4 ],
             "RequireComputers": false

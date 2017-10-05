@@ -8,6 +8,14 @@ namespace GaSchedule.Algorithm
 {
     public class AlgorithmParameters
     {
+        // Number of working hours per day
+        public int ClassNumberPerDay { get; set; } = 6;
+
+        // Number of days in week
+        public int WorkingDaysNumber { get; set; } = 5;
+
+        public int MaxGeneration { get; set; } = 10000;
+
         /// <summary>
         /// 每代族群中染色体的数量
         /// </summary>

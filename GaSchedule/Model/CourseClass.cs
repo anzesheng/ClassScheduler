@@ -1,4 +1,5 @@
 ﻿using GaSchedule.Algorithm;
+using Newtonsoft.Json;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -12,19 +13,22 @@ namespace GaSchedule.Model
     {
         #region Constructors
 
-        private static int index = 0;
+        public CourseClass()
+        {
+            this.CourseId = 1;
+            this.TeacherId = 1;
+            this.Duration = 1;
+            this.StudentsGroupIds = new List<int>();
+            this.RequireComputers = false;
+        }
 
-        private Configuration configuration;
-
-        public CourseClass(Configuration configuration, int course, int teacher, int duration,
+        public CourseClass(int id, int course, int teacher, int duration,
             List<int> groups, bool requireComputers)
         {
-            this.configuration = configuration;
-            this.Id = index++;
-            this.Course = course;
-            this.Teacher = teacher;
+            this.CourseId = course;
+            this.TeacherId = teacher;
             this.Duration = duration;
-            this.StudentsGroups = groups;
+            this.StudentsGroupIds = groups;
             this.RequireComputers = requireComputers;
         }
 
@@ -32,56 +36,47 @@ namespace GaSchedule.Model
 
         #region Properties
 
-        // 课堂的编号
-        public int Id { get; }
-
         /// <summary>
         /// Gets or sets the courset which the class belongs.
         /// 课程ID
         /// </summary>
-        public int Course { get; set; }
+        public int CourseId { get; set; }
 
         /// <summary>
         /// Gets or sets the teacher who teaches.
         /// 任课教师
         /// </summary>
-        public int Teacher { get; set; }
+        public int TeacherId { get; set; }
 
         /// <summary>
         /// Gets or sets the list of student groups that attend the class.
         /// 上课的班级列表，因为有可能上合班课，所以是列表。
         /// </summary>
-        public List<int> StudentsGroups { get; set; } = new List<int>();
+        public List<int> StudentsGroupIds { get; set; } = new List<int>();
 
+        [JsonIgnore]
         public string StudentsGroupsString
         {
             get
             {
                 StringBuilder sb = new StringBuilder();
-                foreach (var id in this.StudentsGroups)
+                foreach (var id in this.StudentsGroupIds)
                 {
-                    sb.Append($"{id.ToString()}&");
+                    sb.Append($"{id.ToString()},");
                 }
                 return sb.ToString();
             }
-        }
-
-        /// <summary>
-        /// Gets the number of seats (sum of student groups' sizes) are needed in the classroom.
-        /// 上课的学生的数量，因为有可能需要合班上课，所以需要计算学生总和。
-        /// </summary>
-        public int NumberOfStuduents
-        {
-            get
+            set
             {
-                int count = 0;
-                foreach (var id in this.StudentsGroups)
+                this.StudentsGroupIds = new List<int>();
+                foreach (var item in value.Split(','))
                 {
-                    var group = this.configuration.StudentsGroups.FirstOrDefault(g => g.Id == id);
-                    count += group.NumberOfStudents;
+                    int id;
+                    if (int.TryParse(item.Trim(), out id))
+                    {
+                        this.StudentsGroupIds.Add(id);
+                    }
                 }
-
-                return count;
             }
         }
 
@@ -105,9 +100,9 @@ namespace GaSchedule.Model
         // 如果有班级需要同时上另一节课，返回true。（表示冲突了）
         public bool StudentsGroupsOverlap(CourseClass c)
         {
-            foreach (var g1 in this.StudentsGroups)
+            foreach (var g1 in this.StudentsGroupIds)
             {
-                foreach (var g2 in c.StudentsGroups)
+                foreach (var g2 in c.StudentsGroupIds)
                 {
                     if (g1 == g2)
                     {
@@ -123,7 +118,7 @@ namespace GaSchedule.Model
         // 如果教师要同时上另一节课，返回true。（表示冲突了）
         public bool TeacherOverlaps(CourseClass c)
         {
-            return this.Teacher == c.Teacher;
+            return this.TeacherId == c.TeacherId;
         }
 
         #endregion

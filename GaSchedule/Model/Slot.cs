@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 
 namespace GaSchedule.Model
 {
@@ -12,13 +13,14 @@ namespace GaSchedule.Model
         /// <summary>
         /// 默认构造函数
         /// </summary>
-        public Slot(int day, int room, int classNo)
+        public Slot(int index, int day, int room, int classNo)
         {
-            this.DayNo = day;
-            this.RoomNo = room;
-            this.ClassNo = classNo;
+            this.SlotIdx = index;
+            this.DayIdx = day;
+            this.RoomIdx = room;
+            this.PeriodIdx = classNo;
             this.IsFreezed = false;
-            this.Classes = new List<int>();
+            this.Classes = new List<CourseClass>();
         }
 
         /// <summary>
@@ -26,12 +28,13 @@ namespace GaSchedule.Model
         /// </summary>
         public Slot(Slot slot)
         {
-            this.DayNo = slot.DayNo;
-            this.RoomNo = slot.RoomNo;
-            this.ClassNo = slot.ClassNo;
+            this.SlotIdx = slot.SlotIdx;
+            this.DayIdx = slot.DayIdx;
+            this.RoomIdx = slot.RoomIdx;
+            this.PeriodIdx = slot.PeriodIdx;
             this.IsFreezed = slot.IsFreezed;
 
-            this.Classes = new List<int>();
+            this.Classes = new List<CourseClass>();
             foreach (var c in slot.Classes)
             {
                 // 运算过程中是不应该产生新课题的，所以这里只是拷贝引用
@@ -43,20 +46,22 @@ namespace GaSchedule.Model
 
         #region 属性
 
+        public int SlotIdx { get; }
+
         /// <summary>
         /// 第几工作日，从0开始。
         /// </summary>
-        public int DayNo { get; set; }
+        public int DayIdx { get; }
 
         /// <summary>
         /// 教室编号，从0开始。
         /// </summary>
-        public int RoomNo { get; set; }
+        public int RoomIdx { get; }
 
         /// <summary>
         /// 一天中的第几节课，从0开始。
         /// </summary>
-        public int ClassNo { get; set; }
+        public int PeriodIdx { get; }
 
         /// <summary>
         /// 该槽位是否被冻结。
@@ -68,36 +73,15 @@ namespace GaSchedule.Model
         /// 在当前槽位上排的课堂。
         /// 原则上一个槽位上只能排一堂课，但是算法在运算过程中需要周转。
         /// </summary>
-        public List<int> Classes { get; set; } = new List<int>();
+        public List<CourseClass> Classes { get; set; } = new List<CourseClass>();
 
         #endregion
 
         #region 方法
 
-        /// <summary>
-        /// 排入一节新课堂。
-        /// </summary>
-        /// <param name="classId">新课题的编号</param>
-        /// <returns>如果排入成功，返回true；如果新课堂已经在槽位中，返回false。</returns>
-        public bool AddClass(int classId)
+        public List<CourseClass> GetClassesByStudentsGroupId(int groupId)
         {
-            if (this.Classes.Contains(classId))
-            {
-                return false;
-            }
-
-            this.Classes.Add(classId);
-            return true;
-        }
-
-        /// <summary>
-        /// 删除一节课堂。
-        /// </summary>
-        /// <param name="classId">需要从槽位中删除的课堂编号。</param>
-        /// <returns>如果删除成功，返回true；如果该课堂不在当前槽位中，返回false。</returns>
-        public bool RemoveClass(int classId)
-        {
-            return this.Classes.Remove(classId);
+            return this.Classes.FindAll(c => c.StudentsGroupIds.Contains(groupId));
         }
 
         #endregion

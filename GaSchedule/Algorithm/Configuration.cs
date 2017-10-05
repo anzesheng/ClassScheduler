@@ -23,25 +23,13 @@ namespace GaSchedule.Algorithm
         public Configuration()
         {
             this.Parameters = new AlgorithmParameters();
-
-            this.Teachers.Clear();
-            this.StudentsGroups.Clear();
-            this.Courses.Clear();
-            this.Classrooms.Clear();
-            this.CourseClasses.Clear();
         }
 
         #endregion
 
         #region Properties
 
-        // Number of working hours per day
-        public int ClassNumberPerDay { get; set; } = 12;
-
-        // Number of days in week
-        public int WorkingDaysNumber { get; set; } = 5;
-
-        public AlgorithmParameters Parameters { get; set; }
+        public AlgorithmParameters Parameters { get; set; } = new AlgorithmParameters();
 
         // Parsed professors
         public List<Teacher> Teachers { get; set; } = new List<Teacher>();
@@ -66,7 +54,7 @@ namespace GaSchedule.Algorithm
         {
             get
             {
-                return this.WorkingDaysNumber * this.ClassNumberPerDay * this.Classrooms.Count;
+                return this.Parameters.WorkingDaysNumber * this.Parameters.ClassNumberPerDay * this.Classrooms.Count;
             }
         }
 
@@ -78,6 +66,21 @@ namespace GaSchedule.Algorithm
         {
             this.Parameters.VerifyParameters();
             return true;
+        }
+
+        public int GetStudentNumber(List<int> groupIds)
+        {
+            int num = 0;
+            foreach (var id in groupIds)
+            {
+                var group = this.StudentsGroups.FirstOrDefault(g => g.Id == id);
+                if (group != null)
+                {
+                    num += group.NumberOfStudents;
+                }
+            }
+
+            return num;
         }
 
         #endregion

@@ -1,6 +1,7 @@
 ﻿using GaSchedule.Model;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 
 namespace GaSchedule.Algorithm
@@ -60,7 +61,7 @@ namespace GaSchedule.Algorithm
         /// (3) 该列表的长度 = 上课日数×每日课时数×教室数
         /// (4) 某一节课的时间槽的序号 = (在第几个工作日-1)×每日的课时数×教室总数 + (在第几时段-1)×教室总数 + 在第几间教室
         /// </summary>
-        private List<Slot> slots;
+        public List<Slot> Slots { get; private set; }
 
         /// <summary>
         /// Class table for chromosome
@@ -87,7 +88,7 @@ namespace GaSchedule.Algorithm
             this.Fitness = 0;
 
             // 准备好时间槽容器，数组初始化会调用Slot的默认构造函数
-            this.InitialSlots();
+            this.InitialEmptySlots();
 
             // TODO: 按需求冻结一些槽位
 
@@ -100,17 +101,18 @@ namespace GaSchedule.Algorithm
         /// <summary>
         /// 准备好时间槽容器。一个教学周期（一般是一周）内能够安排的所有课程。
         /// </summary>
-        public void InitialSlots()
+        public void InitialEmptySlots()
         {
-            this.slots = new List<Slot>();
+            this.Slots = new List<Slot>();
+            int i = 0;
 
-            for (int d = 0; d < this.configuration.WorkingDaysNumber; d++)
+            for (int d = 0; d < this.configuration.Parameters.WorkingDaysNumber; d++)
             {
                 for (int r = 0; r < this.configuration.Classrooms.Count; r++)
                 {
-                    for (int c = 0; c < this.configuration.ClassNumberPerDay; c++)
+                    for (int c = 0; c < this.configuration.Parameters.ClassNumberPerDay; c++)
                     {
-                        this.slots.Add(new Slot(d, r, c));
+                        this.Slots.Add(new Slot(i++, d, r, c));
                     }
                 }
             }
@@ -136,7 +138,7 @@ namespace GaSchedule.Algorithm
             // 拷贝排课内容
             if (setupOnly)
             {
-                this.InitialSlots();
+                this.InitialEmptySlots();
 
                 // TODO: 按需求冻结一些槽位
             }
@@ -144,10 +146,10 @@ namespace GaSchedule.Algorithm
             {
                 // copy code
                 // 拷贝槽位数据
-                this.slots = new List<Slot>();
-                foreach (var s in schedule.slots)
+                this.Slots = new List<Slot>();
+                foreach (var s in schedule.Slots)
                 {
-                    this.slots.Add(s);
+                    this.Slots.Add(new Slot(s));
                 }
 
                 // 拷贝课堂
@@ -167,6 +169,8 @@ namespace GaSchedule.Algorithm
                 // copy fitness
                 // 拷贝适应性
                 this.Fitness = schedule.Fitness;
+
+                this.SelfCheck();
             }
         }
 
@@ -202,25 +206,25 @@ namespace GaSchedule.Algorithm
                 int dur = c.Duration;
 
                 // 随机确定在第几个工作日上课
-                int day = this.Rand() % this.configuration.WorkingDaysNumber;
+                int day = this.Rand() % this.configuration.Parameters.WorkingDaysNumber;
 
                 // 随机确定使用第几间教室
                 int room = this.Rand() % this.configuration.Classrooms.Count;
 
                 // 随机选择一个上课时段
-                int time = this.Rand() % (this.configuration.ClassNumberPerDay + 1 - dur);
+                int time = this.Rand() % (this.configuration.Parameters.ClassNumberPerDay + 1 - dur);
 
                 // 计算出本课堂的时间槽序号，即在总课堂列表中的位置
                 // 总课程列表：上课日数×每日课时数×教室数
-                int pos = day * this.configuration.Classrooms.Count * this.configuration.ClassNumberPerDay
-                    + room * this.configuration.ClassNumberPerDay
+                int pos = day * this.configuration.Classrooms.Count * this.configuration.Parameters.ClassNumberPerDay
+                    + room * this.configuration.Parameters.ClassNumberPerDay
                     + time;
 
                 // fill time-space slots, for each hour of class
                 // 在当前教室的指定时段上排课，有的课堂需要占用多个时段
                 for (int i = dur - 1; i >= 0; i--)
                 {
-                    newSchedule.slots[pos + i].Classes.Add(c.Id);
+                    newSchedule.Slots[pos + i].Classes.Add(c);
                 }
 
                 // insert in class table of chromosome
@@ -230,6 +234,8 @@ namespace GaSchedule.Algorithm
 
             //计算新染色体的适应性
             newSchedule.CalculateFitness();
+
+            newSchedule.SelfCheck();
 
             // return smart pointer
             return newSchedule;
@@ -249,6 +255,8 @@ namespace GaSchedule.Algorithm
         // 执行均匀杂交
         public Schedule Crossover(Schedule parent2)
         {
+            this.SelfCheck();
+
             // check probability of crossover operation
             // 看看这次是否需要杂交，如果不需要
             if (this.Rand() % 100 > this.configuration.Parameters.CrossoverProbability)
@@ -290,15 +298,15 @@ namespace GaSchedule.Algorithm
                 Schedule parent = first ? this : parent2;
 
                 CourseClass cc = parent.ScheduledClasses.ElementAt(i).Key;
-                int p = parent.ScheduledClasses.ElementAt(i).Value;
+                int pos = parent.ScheduledClasses.ElementAt(i).Value;
 
                 // insert class from first parent into new chromosome's calss table
-                newSchedule.ScheduledClasses[cc] = p;
+                newSchedule.ScheduledClasses[cc] = pos;
 
                 // all time-space slots of class are copied
                 for (int j = cc.Duration - 1; j >= 0; j--)
                 {
-                    newSchedule.slots[p + j].Classes.Add(cc.Id);
+                    newSchedule.Slots[pos + j].Classes.Add(cc);
                 }
 
                 // crossover point
@@ -314,6 +322,8 @@ namespace GaSchedule.Algorithm
             // 计算新染色体的适应度
             newSchedule.CalculateFitness();
 
+            this.SelfCheck();
+
             // return smart pointer to offspring
             return newSchedule;
         }
@@ -322,6 +332,8 @@ namespace GaSchedule.Algorithm
         // 在当前染色体上执行变异
         public void Mutation()
         {
+            this.SelfCheck();
+
             // check probability of mutation operation
             // 检查是否需要变异
             if (Rand() % 100 > this.configuration.Parameters.MutationProbability)
@@ -355,29 +367,36 @@ namespace GaSchedule.Algorithm
                 int dur = cc1.Duration;
 
                 // 第几个工作日
-                int day = Rand() % this.configuration.WorkingDaysNumber;
+                int day = Rand() % this.configuration.Parameters.WorkingDaysNumber;
 
                 // 第几个教室
                 int room = Rand() % this.configuration.Classrooms.Count;
 
                 // 第几节课开始上
-                int time = Rand() % (this.configuration.ClassNumberPerDay + 1 - dur);
+                int time = Rand() % (this.configuration.Parameters.ClassNumberPerDay + 1 - dur);
 
                 // 得到新的时间槽
-                int pos2 = day * this.configuration.Classrooms.Count * this.configuration.ClassNumberPerDay + room * this.configuration.ClassNumberPerDay + time;
+                int pos2 = day * this.configuration.Classrooms.Count * this.configuration.Parameters.ClassNumberPerDay + room * this.configuration.Parameters.ClassNumberPerDay + time;
 
                 // move all time-space slots
                 // 移动该课堂的每一节课
                 for (int j = dur - 1; j >= 0; j--)
                 {
-                    // remove class hour from current time-space slot
                     // 将课堂从现在的时间槽里删除
-                    this.slots[pos1 + j].RemoveClass(cc1.Id);
-
-                    // move class hour to new time-space slot
-                    // 放入新的时间槽
-                    this.slots[pos2 + j].AddClass(cc1.Id);
+                    this.Slots[pos1 + j].Classes.Remove(cc1);
                 }
+
+                for (int j = dur - 1; j >= 0; j--)
+                {
+                    // 放入新的时间槽
+                    if (!this.Slots[pos2 + j].Classes.Contains(cc1))
+                    {
+                        this.Slots[pos2 + j].Classes.Add(cc1);
+                    }
+                }
+
+                var count = this.Slots.FindAll(s => s.Classes.Contains(cc1)).Count;
+                Debug.Assert(cc1.Duration == count);
 
                 // change entry of class table to point to new time-space slots
                 // 保存课堂的新时间槽
@@ -386,6 +405,8 @@ namespace GaSchedule.Algorithm
 
             // 重新计算适应度
             CalculateFitness();
+
+            this.SelfCheck();
         }
 
         // Calculates fitness value of chromosome
@@ -400,7 +421,7 @@ namespace GaSchedule.Algorithm
             int numberOfRooms = this.configuration.Classrooms.Count;
 
             // 每日可用课堂数（每日课时数*教室数）
-            int daySize = this.configuration.ClassNumberPerDay * numberOfRooms;
+            int daySize = this.configuration.Parameters.ClassNumberPerDay * numberOfRooms;
 
             // 标准的序号，每个课堂有5个评价标准，所有课堂的所有指标被顺序放在一个数组中
             int ci = 0;
@@ -416,41 +437,32 @@ namespace GaSchedule.Algorithm
             {
                 var pair = this.ScheduledClasses.ElementAt(idx);
                 CourseClass cc = pair.Key;    // 课堂
-                int p = pair.Value;           // 课堂的大排行序号
+                Slot firstSlot = this.Slots[pair.Value];
 
-                // coordinate of time-space slot
-                int day = p / daySize;        // 第几个工作日
-                int time = p % daySize;       // 当日的课次编号（按当日所有课堂排序）
-                int room = time / this.configuration.ClassNumberPerDay;  // 第几间教室
-                time = time % this.configuration.ClassNumberPerDay;      // 当日的第几时段
+                List<int> slotIdexes = new List<int>();
+                for (int i = 0; i < cc.Duration; i++)
+                {
+                    slotIdexes.Add(pair.Value + i);
+                }
 
                 // check for room overlapping of classes
                 // 检查教室重合
-                bool ro = false;
-                for (int i = cc.Duration - 1; i >= 0; i--)
-                {
-                    if (this.slots[p + i].Classes.Count > 1)
-                    {
-                        ro = true;
-                        break;
-                    }
-                }
+                bool roomOverlapped = slotIdexes.FindIndex(i => this.Slots[i].Classes.Count > 1) >= 0;
 
                 // on room overlaping
                 // 如果没有发生教室重合，得1分
-                if (!ro)
+                if (!roomOverlapped)
                 {
                     score++;
                 }
 
-                this.criteria[ci + 0] = !ro;
+                this.criteria[ci + 0] = !roomOverlapped;
 
-
-                Classroom r = this.configuration.Classrooms[room];
+                Classroom r = this.configuration.Classrooms[firstSlot.RoomIdx];
 
                 // does current room have enough seats
                 // 当前教室的座位是否足够，如果足够加1分
-                this.criteria[ci + 1] = r.NumberOfSeats >= cc.NumberOfStuduents;
+                this.criteria[ci + 1] = r.NumberOfSeats >= this.configuration.GetStudentNumber(cc.StudentsGroupIds);
                 if (this.criteria[ci + 1])
                 {
                     score++;
@@ -464,72 +476,66 @@ namespace GaSchedule.Algorithm
                     score++;
                 }
 
-                bool po = false, go = false;
-
-
-                // 当日该时段第一节课的大排行序号
-                int firstClassNo = day * daySize + time;
-
-                // check overlapping of classes for professors and student groups
-                // 检查教师和学生是否同时上多于一个课堂
-                for (int num = numberOfRooms, t = firstClassNo; num > 0; num--, t += this.configuration.ClassNumberPerDay)
+                bool teacherOverlapped = false;
+                bool groupOverlapped = false;
+                foreach (var i in slotIdexes)
                 {
-                    // for each hour of class
-                    // 遍历当前课堂的每一个时段
-                    for (int i = cc.Duration - 1; i >= 0; i--)
+                    if (teacherOverlapped && groupOverlapped)
                     {
-                        // check for overlapping with other classes at same time
-                        // 检查老师和班级是否与其它同一时段的课程有重合
-                        Slot slot = this.slots[t + i];
-                        foreach (int classId in slot.Classes)
-                        {
-                            if (cc.Id != classId)
-                            {
-                                var anotherCalss = this.configuration.CourseClasses[classId];
+                        break;
+                    }
 
-                                // teacher overlaps?
-                                if (!po && cc.TeacherOverlaps(anotherCalss))
-                                {
-                                    po = true;
-                                }
+                    var cur = this.Slots[i];
+                    var concurrentSlots = this.Slots.FindAll(s => s.DayIdx == cur.DayIdx && s.PeriodIdx == cur.PeriodIdx);
 
-                                // student group overlaps?
-                                if (!go && cc.StudentsGroupsOverlap(anotherCalss))
-                                {
-                                    go = true;
-                                }
+                    if (!teacherOverlapped)
+                    {
+                        teacherOverlapped = concurrentSlots.FindAll(s => s.Classes.FirstOrDefault(c => c.TeacherId == cc.TeacherId) != null).Count > 1;
+                    }
 
-                                // both type of overlapping? no need to check more
-                                if (po && go)
-                                {
-                                    goto total_overlap;
-                                }
-                            }
-                        }
+                    if (!groupOverlapped)
+                    {
+                        groupOverlapped = concurrentSlots.FindAll(s => s.Classes.FirstOrDefault(c => cc.StudentsGroupIds.FindIndex(g => c.StudentsGroupIds.Contains(g)) >= 0) != null).Count > 1;
                     }
                 }
 
-                total_overlap:
-
                 // professors have no overlaping classes?
                 // 如果教师没有冲突，加1分
-                if (!po)
+                if (!teacherOverlapped)
                 {
                     score++;
                 }
-                this.criteria[ci + 3] = !po;
+                this.criteria[ci + 3] = !teacherOverlapped;
 
                 // student groups has no overlaping classes?
                 // 如果学生组上课时间没有冲突，加1分
-                if (!go)
+                if (!groupOverlapped)
                 {
                     score++;
                 }
-                this.criteria[ci + 4] = !go;
+
+                this.criteria[ci + 4] = !groupOverlapped;
             }
 
             // calculate fitess value based on score
             this.Fitness = (float)score / (this.configuration.CourseClasses.Count * 5);
+        }
+
+        private void SelfCheck()
+        {
+            int count1 = 0;
+            foreach (var c in this.configuration.CourseClasses)
+            {
+                count1 += c.Duration;
+            }
+
+            int count2 = 0;
+            foreach (var s in this.Slots)
+            {
+                count2 += s.Classes.Count;
+            }
+
+            Debug.Assert(count2 == 0 || count1 == count2);
         }
 
         #endregion

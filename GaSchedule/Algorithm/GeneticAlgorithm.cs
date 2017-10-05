@@ -8,7 +8,6 @@ using System.Threading.Tasks;
 
 namespace GaSchedule.Algorithm
 {
-
     public enum AlgorithmState
     {
         AS_USER_STOPED,
@@ -43,15 +42,11 @@ namespace GaSchedule.Algorithm
         // 当前选出的最优染色体的数量，初值为0，在计算过程中会发生变化
         private int currentBestSize;
 
-        private ScheduleObserver observer;
+        private IScheduleObserver observer;
 
         // Prototype of chromosomes in population
         // 种群中染色体的原型
         private Schedule prototype;
-
-        // Current generation
-        // 当代
-        private int currentGeneration;
 
         // State of execution of algorithm
         // 算法的执行状态
@@ -66,13 +61,13 @@ namespace GaSchedule.Algorithm
         /// <param name="trackBest">The track best.</param>
         /// <param name="prototype">The prototype.原型染色体</param>
         /// <param name="observer">The observer.观察者</param>
-        public GeneticAlgorithm(Configuration configuration, ScheduleObserver observer)
+        public GeneticAlgorithm(Configuration configuration, IScheduleObserver observer)
         {
             this.configuration = configuration;
             this.observer = observer;
 
             this.currentBestSize = 0;
-            this.currentGeneration = 0;
+            this.CurrentGeneration = 0;
             this.state = AlgorithmState.AS_USER_STOPED;
 
             // make prototype of chromosomes
@@ -98,17 +93,15 @@ namespace GaSchedule.Algorithm
 
         }
 
-        // Frees used resources
-        ~GeneticAlgorithm()
-        {
-
-        }
-
         #endregion
 
         #region Properties
 
         public Configuration configuration { get; set; }
+
+        // Current generation
+        // 当代
+        public int CurrentGeneration { get; private set; }
 
         // Returns pointer to best chromosomes in population
         // 获得最优染色体
@@ -121,11 +114,11 @@ namespace GaSchedule.Algorithm
         // Returns current generation
         public int GetCurrentGeneration()
         {
-            return this.currentGeneration;
+            return this.CurrentGeneration;
         }
 
         // Returns pointe to algorithm's observer
-        public ScheduleObserver GetObserver()
+        public IScheduleObserver GetObserver()
         {
             return this.observer;
         }
@@ -181,7 +174,7 @@ namespace GaSchedule.Algorithm
             }
 
             // 当前代设为0
-            this.currentGeneration = 0;
+            this.CurrentGeneration = 0;
 
             // 开始运算，直到用户停止或算法找到最优解
             while (true)
@@ -201,7 +194,7 @@ namespace GaSchedule.Algorithm
 
                 // algorithm has reached criteria?
                 // 如果当前最优染色体已经是最优，结束计算
-                if (best.Fitness >= 1 || this.currentGeneration > 10000)
+                if (best.Fitness >= 1 || this.CurrentGeneration > this.configuration.Parameters.MaxGeneration)
                 {
                     this.state = AlgorithmState.AS_CRITERIA_STOPPED;
                     //lock.Unlock();
@@ -259,7 +252,7 @@ namespace GaSchedule.Algorithm
                     // notify observer
                     this.observer.NewBestChromosome(newBest);
 
-                this.currentGeneration++;
+                this.CurrentGeneration++;
             }
 
             if (this.observer != null)

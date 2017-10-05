@@ -8,6 +8,12 @@ namespace GaSchedule.Model
 {
     public class Course
     {
+        public Course()
+        {
+            this.Id = -1;
+            this.Name = string.Empty;
+        }
+
         public Course(int id, string name)
         {
             this.Id = id;
