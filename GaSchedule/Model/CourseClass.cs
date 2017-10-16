@@ -13,112 +13,125 @@ namespace GaSchedule.Model
     {
         #region Constructors
 
-        public CourseClass()
-        {
-            this.CourseId = 1;
-            this.TeacherId = 1;
-            this.Duration = 1;
-            this.StudentsGroupIds = new List<int>();
-            this.RequireComputers = false;
-        }
-
-        public CourseClass(int id, int course, int teacher, int duration,
-            List<int> groups, bool requireComputers)
-        {
-            this.CourseId = course;
-            this.TeacherId = teacher;
-            this.Duration = duration;
-            this.StudentsGroupIds = groups;
-            this.RequireComputers = requireComputers;
-        }
-
         #endregion
 
         #region Properties
 
         /// <summary>
-        /// Gets or sets the courset which the class belongs.
         /// 课程ID
+        /// 需事先指定好
         /// </summary>
-        public int CourseId { get; set; }
+        public int CourseId { get; set; } = 1;
 
         /// <summary>
-        /// Gets or sets the teacher who teaches.
-        /// 任课教师
+        /// 任课教师ID
+        /// 需事先指定好
         /// </summary>
-        public int TeacherId { get; set; }
+        public int TeacherId { get; set; } = 1;
 
         /// <summary>
-        /// Gets or sets the list of student groups that attend the class.
-        /// 上课的班级列表，因为有可能上合班课，所以是列表。
+        /// 班级ID
+        /// 需事先指定好
         /// </summary>
-        public List<int> StudentsGroupIds { get; set; } = new List<int>();
+        public int StudentsGroupId { get; set; } = 1;
 
-        [JsonIgnore]
-        public string StudentsGroupsString
+        /// <summary>
+        /// 教室ID
+        /// 需事先指定好
+        /// </summary>
+        public int ClassroomId { get; set; } = 1;
+
+        /// <summary>
+        /// 课堂的长度
+        /// 如果一堂课连续上N节，Duration为N
+        /// 需事先指定好
+        /// </summary>
+        public int Duration { get; set; } = 1;
+
+        /// <summary>
+        /// 课程是否已经固定
+        /// 需求：
+        ///   1. 指定特定班级的特定课程的其中一节（或多节）必须安排在特定星期，特定科节上
+        ///   2. 某天的某节禁止排课
+        /// 需事先指定好
+        /// </summary>
+        public bool IsFixed { get; set; } = false;
+
+        /// <summary>
+        /// 偏好的时间，用第几节课表示。比如上午用[0,1,2,3]表示，假设上午有四节课。
+        /// 需求：科目安排优先（比如优先排在上午）
+        /// 需事先指定好
+        /// </summary>
+        public int[] PreferredClassIndexes { get; private set; }
+
+        /// <summary>
+        /// 在第几个工作日上课，从0开始。
+        /// - 当IsFixed==true时，需事先指定好
+        /// - 当IsFixed==false时，由算法计算
+        /// </summary>
+        public int DayIndex { get; set; } = 0;
+
+        /// <summary>
+        /// 一天中的第几节课，从0开始
+        /// - 当IsFixed==true时，需事先指定好
+        /// - 当IsFixed==false时，由算法计算
+        /// </summary>
+        public int ClassIndex { get; set; }
+
+        /// <summary>
+        /// 专门为DataGrid控件创建的属性
+        /// </summary>
+        public string PreferredClassIndexesStr
         {
             get
             {
-                StringBuilder sb = new StringBuilder();
-                foreach (var id in this.StudentsGroupIds)
-                {
-                    sb.Append($"{id.ToString()},");
-                }
-                return sb.ToString();
+                return this.Convert(this.PreferredClassIndexes);
             }
             set
             {
-                this.StudentsGroupIds = new List<int>();
-                foreach (var item in value.Split(','))
-                {
-                    int id;
-                    if (int.TryParse(item.Trim(), out id))
-                    {
-                        this.StudentsGroupIds.Add(id);
-                    }
-                }
+                this.PreferredClassIndexes = this.Convert(value);
             }
         }
-
-        /// <summary>
-        /// Gets or sets a value indicating whether the class requires computers in the classroom.
-        /// 当前课程是否需要计算机
-        /// </summary>
-        public bool RequireComputers { get; set; }
-
-        /// <summary>
-        /// Gets or sets the duration of the class (in hours).
-        /// 课堂的时长
-        /// </summary>
-        public int Duration { get; set; }
 
         #endregion
 
-        #region Methods
+        #region PrivateMethods
 
-        // Returns TRUE if another class has one or overlapping student groups.
-        // 如果有班级需要同时上另一节课，返回true。（表示冲突了）
-        public bool StudentsGroupsOverlap(CourseClass c)
+        private string Convert(int[] arr)
         {
-            foreach (var g1 in this.StudentsGroupIds)
+            StringBuilder sb = new StringBuilder();
+
+            if (arr != null)
             {
-                foreach (var g2 in c.StudentsGroupIds)
+                for (int i = 0; i < arr.Length; i++)
                 {
-                    if (g1 == g2)
+                    if (i == 0)
                     {
-                        return true;
+                        sb.Append(arr[0]);
+                    }
+                    else
+                    {
+                        sb.Append($",{arr[0]}");
                     }
                 }
             }
 
-            return false;
+            return sb.ToString();
         }
 
-        // Returns TRUE if another class has same teacher.
-        // 如果教师要同时上另一节课，返回true。（表示冲突了）
-        public bool TeacherOverlaps(CourseClass c)
+        private int[] Convert(string str)
         {
-            return this.TeacherId == c.TeacherId;
+            var list = new List<int>();
+            foreach (var item in str.Split(','))
+            {
+                int idx = 0;
+                if (int.TryParse(item, out idx))
+                {
+                    list.Add(idx);
+                }
+            }
+
+            return list.ToArray();
         }
 
         #endregion

@@ -9,7 +9,7 @@ namespace GaSchedule.Algorithm
     public class AlgorithmParameters
     {
         // Number of working hours per day
-        public int ClassNumberPerDay { get; set; } = 6;
+        public int NumberOfClassPerDay { get; set; } = 6;
 
         // Number of days in week
         public int WorkingDaysNumber { get; set; } = 5;

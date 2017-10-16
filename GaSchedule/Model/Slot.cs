@@ -13,13 +13,13 @@ namespace GaSchedule.Model
         /// <summary>
         /// 默认构造函数
         /// </summary>
-        public Slot(int index, int day, int room, int classNo)
+        public Slot(int slotIndex, int dayIndex, int studentsGroupIndex, int classIndex)
         {
-            this.SlotIdx = index;
-            this.DayIdx = day;
-            this.RoomIdx = room;
-            this.PeriodIdx = classNo;
-            this.IsFreezed = false;
+            this.SlotIndex = slotIndex;
+            this.DayIndex = dayIndex;
+            this.StudentsGroupIndex = studentsGroupIndex;
+            this.ClassIndexInOneDay = classIndex;
+            this.IsFixed = false;
             this.Classes = new List<CourseClass>();
         }
 
@@ -28,11 +28,11 @@ namespace GaSchedule.Model
         /// </summary>
         public Slot(Slot slot)
         {
-            this.SlotIdx = slot.SlotIdx;
-            this.DayIdx = slot.DayIdx;
-            this.RoomIdx = slot.RoomIdx;
-            this.PeriodIdx = slot.PeriodIdx;
-            this.IsFreezed = slot.IsFreezed;
+            this.SlotIndex = slot.SlotIndex;
+            this.DayIndex = slot.DayIndex;
+            this.StudentsGroupIndex = slot.StudentsGroupIndex;
+            this.ClassIndexInOneDay = slot.ClassIndexInOneDay;
+            this.IsFixed = slot.IsFixed;
 
             this.Classes = new List<CourseClass>();
             foreach (var c in slot.Classes)
@@ -46,43 +46,43 @@ namespace GaSchedule.Model
 
         #region 属性
 
-        public int SlotIdx { get; }
+        /// <summary>
+        /// 槽位序号
+        /// </summary>
+        public int SlotIndex { get; }
 
         /// <summary>
         /// 第几工作日，从0开始。
         /// </summary>
-        public int DayIdx { get; }
+        public int DayIndex { get; }
 
         /// <summary>
-        /// 教室编号，从0开始。
+        /// 班级的顺序号（非ID），从0开始
+        /// 该槽位只能放置该班级的课程
         /// </summary>
-        public int RoomIdx { get; }
+        public int StudentsGroupIndex { get; }
 
         /// <summary>
         /// 一天中的第几节课，从0开始。
         /// </summary>
-        public int PeriodIdx { get; }
+        public int ClassIndexInOneDay { get; }
 
         /// <summary>
         /// 该槽位是否被冻结。
         /// 特定班级的特定课程的其中一节（或多节）必须安排在特定槽位上。
         /// </summary>
-        public bool IsFreezed { get; set; }
+        public bool IsFixed { get; set; }
 
         /// <summary>
         /// 在当前槽位上排的课堂。
-        /// 原则上一个槽位上只能排一堂课，但是算法在运算过程中需要周转。
+        ///   1. 一个槽位只能为一个班级排课。
+        ///   2. 原则上一个槽位上只能排一堂课，但是算法在运算过程中需要周转。
         /// </summary>
         public List<CourseClass> Classes { get; set; } = new List<CourseClass>();
 
         #endregion
 
         #region 方法
-
-        public List<CourseClass> GetClassesByStudentsGroupId(int groupId)
-        {
-            return this.Classes.FindAll(c => c.StudentsGroupIds.Contains(groupId));
-        }
 
         #endregion
     }

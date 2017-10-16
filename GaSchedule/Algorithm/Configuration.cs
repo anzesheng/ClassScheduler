@@ -40,9 +40,6 @@ namespace GaSchedule.Algorithm
         // Parsed courses
         public List<Course> Courses { get; set; } = new List<Course>();
 
-        // Parsed rooms
-        public List<Classroom> Classrooms { get; set; } = new List<Classroom>();
-
         // Parsed classes
         // 待排的课程，由算法使用者提供
         public List<CourseClass> CourseClasses { get; set; } = new List<CourseClass>();
@@ -54,7 +51,7 @@ namespace GaSchedule.Algorithm
         {
             get
             {
-                return this.Parameters.WorkingDaysNumber * this.Parameters.ClassNumberPerDay * this.Classrooms.Count;
+                return this.Parameters.WorkingDaysNumber * this.Parameters.NumberOfClassPerDay * this.StudentsGroups.Count;
             }
         }
 
@@ -81,6 +78,11 @@ namespace GaSchedule.Algorithm
             }
 
             return num;
+        }
+
+        public int GetStudentsGroupIdx(CourseClass cc)
+        {
+            return this.StudentsGroups.FindIndex(sg => sg.Id == cc.StudentsGroupId);
         }
 
         #endregion

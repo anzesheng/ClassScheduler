@@ -21,11 +21,14 @@ namespace ClassScheduler
 
         private string resultPerStudentsGroup;
         private string resultPerTeacher;
-        private string resultPerClassRoom;
+
+        private GeneticAlgorithm ga;
 
         public Test()
         {
             InitializeComponent();
+            this.backgroundWorker1.WorkerReportsProgress = true;
+            this.backgroundWorker1.WorkerSupportsCancellation = true;
             this.panelInput.Dock = DockStyle.Fill;
             this.panelOutput.Dock = DockStyle.Fill;
             this.comboBox1.SelectedIndex = 0;
@@ -118,9 +121,6 @@ namespace ClassScheduler
                 case "学科":
                     this.dataGridView1.DataSource = new BindingList<Course>(this.configuration.Courses);
                     break;
-                case "教室":
-                    this.dataGridView1.DataSource = new BindingList<Classroom>(this.configuration.Classrooms);
-                    break;
                 default:
                     break;
             }
@@ -187,16 +187,16 @@ namespace ClassScheduler
         {
             if (this.configuration != null)
             {
-                GeneticAlgorithm ga = new GeneticAlgorithm(this.configuration, new TestObserver(this.toolStripStatusLabel1, this.toolStripStatusLabel2, this.toolStripProgressBar1));
-                ga.Start();
-
-                //this.labelResultSummary.Text = $"Fitness: {ga.GetBestChromosome().Fitness}; Generation: {ga.CurrentGeneration}";
-
-                this.SwitchView(true);
-                this.resultPerStudentsGroup = ResultAnalyzer.GetResultByStudentsGroups(this.configuration, ga);
-                this.resultPerClassRoom = ResultAnalyzer.GetResultByClassRooms(this.configuration, ga);
-                this.BindResultControls();
+                if (backgroundWorker1.IsBusy != true)
+                {
+                    // Start the asynchronous operation.
+                    backgroundWorker1.RunWorkerAsync();
+                }
             }
+
+            
+
+
         }
 
         private void comboBox2_SelectedIndexChanged(object sender, EventArgs e)
@@ -213,9 +213,6 @@ namespace ClassScheduler
                     break;
                 case "按老师":
                     this.richTextBox1.Text = this.resultPerTeacher;
-                    break;
-                case "按教室":
-                    this.richTextBox1.Text = this.resultPerClassRoom;
                     break;
                 default:
                     break;
@@ -236,7 +233,43 @@ namespace ClassScheduler
         {
             this.toolStripStatusLabel2.Visible = false;
             this.toolStripProgressBar1.Visible = false;
-            this.toolStripStatusLabel1.Text = (this.configuration!=null && this.configuration.VerifyContent()) ? "Ready" : "Not ready";
+            this.toolStripStatusLabel1.Text = (this.configuration != null && this.configuration.VerifyContent()) ? "Ready" : "Not ready";
+        }
+
+        private void backgroundWorker1_DoWork(object sender, DoWorkEventArgs e)
+        {
+            BackgroundWorker worker = sender as BackgroundWorker;
+
+            this.ga = new GeneticAlgorithm(this.configuration, new TestObserver(this.toolStripStatusLabel1, this.toolStripStatusLabel2, this.toolStripProgressBar1));
+            this.ga.Start();
+
+            //for (int i = 1; i <= 10; i++)
+            //{
+            //    if (worker.CancellationPending == true)
+            //    {
+            //        e.Cancel = true;
+            //        break;
+            //    }
+            //    else
+            //    {
+            //        // Perform a time consuming operation and report progress.
+            //        System.Threading.Thread.Sleep(500);
+            //        worker.ReportProgress(i * 10);
+            //    }
+            //}
+        }
+
+        private void backgroundWorker1_ProgressChanged(object sender, ProgressChangedEventArgs e)
+        {
+            this.toolStripStatusLabel1.Text = (e.ProgressPercentage.ToString() + "%");
+        }
+
+        private void backgroundWorker1_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
+        {
+            this.SwitchView(true);
+            this.resultPerStudentsGroup = ResultAnalyzer.GetResultByStudentsGroups(this.configuration, this.ga);
+            this.BindResultControls();
+            MessageBox.Show("Done");
         }
     }
 }

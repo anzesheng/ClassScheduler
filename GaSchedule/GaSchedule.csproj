@@ -48,13 +48,11 @@
   <ItemGroup>
     <Compile Include="Algorithm\AlgorithmParameters.cs" />
     <Compile Include="Algorithm\Configuration.cs" />
-    <Compile Include="Algorithm\ConfigurationFactory.cs" />
     <Compile Include="Algorithm\GeneticAlgorithm.cs" />
     <Compile Include="Algorithm\IScheduleObserver.cs" />
     <Compile Include="Algorithm\ResultAnalyzer.cs" />
     <Compile Include="Algorithm\Schedule.cs" />
     <Compile Include="Algorithm\ScheduleObserver.cs" />
-    <Compile Include="Model\Classroom.cs" />
     <Compile Include="Model\Course.cs" />
     <Compile Include="Model\CourseClass.cs" />
     <Compile Include="Model\Slot.cs" />

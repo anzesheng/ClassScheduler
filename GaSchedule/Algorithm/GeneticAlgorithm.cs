@@ -306,7 +306,7 @@ namespace GaSchedule.Algorithm
                 {
                     // position of new chromosomes is found?
                     var c = this.Chromosomes[this.bestChromosomes[i - 1]];
-                    if (c.Fitness > newChrom.Fitness)
+                    if (c.Fitness >= newChrom.Fitness)
                     {
                         break;
                     }
