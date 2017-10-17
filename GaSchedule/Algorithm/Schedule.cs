@@ -309,7 +309,7 @@ namespace GaSchedule.Algorithm
 
         private Slot GetNewSlot(CourseClass cc)
         {
-            //TODO: 没有考虑duration，午休和duration冻结
+            //TODO: 没有考虑午休
             Slot newSlot = null;
             int count = 0;
             int group = this.configuration.GetStudentsGroupIdx(cc);
@@ -323,6 +323,20 @@ namespace GaSchedule.Algorithm
 
                 // 第几节课开始上，考虑了duration
                 int time = Rand() % (this.configuration.Parameters.NumberOfClassPerDay + 1 - cc.Duration);
+
+                // 如果用户有偏好，前5次尝试按照用户偏好优先。如果不能成功，则忽略偏好。
+                if (count < 5 && cc.ExpectedClassIndexes != null && cc.ExpectedClassIndexes.Length > 0)
+                {
+                    if (cc.ExpectedClassIndexes.Length == 1)
+                    {
+                        time = cc.ExpectedClassIndexes[0];
+                    }
+                    else
+                    {
+                        int idx = Rand() % (cc.ExpectedClassIndexes.Length);
+                        time = cc.ExpectedClassIndexes[idx];
+                    }
+                }
 
                 // 得到新的时间槽
                 newSlot = this.GetSlot(day, group, time);
@@ -368,9 +382,10 @@ namespace GaSchedule.Algorithm
                 bool teacherOverlapped = false;
                 bool groupOverlapped = false;
                 bool roomOverlapped = false;
+                bool notMeetExpectation = false;
                 foreach (var slot in this.GetSlots(cc))
                 {
-                    if (teacherOverlapped && groupOverlapped && roomOverlapped)
+                    if (teacherOverlapped && groupOverlapped && roomOverlapped && notMeetExpectation)
                     {
                         break;
                     }
@@ -386,18 +401,25 @@ namespace GaSchedule.Algorithm
                     {
                         if (slot.Classes.Count > 1)
                         {
+                            // 一个slot只能排一节课
                             groupOverlapped = true;
                         }
                         else
                         {
+                            // 同一时间班级要上多于一门课程（不可能发生的情况）
                             groupOverlapped = concurrentSlots.FindAll(s => s.Classes.FirstOrDefault(c => cc.StudentsGroupId == c.StudentsGroupId) != null).Count > 1;
                         }
                     }
 
-                    //if (!roomOverlapped)
-                    //{
-                    //    roomOverlapped = concurrentSlots.FindAll(s => s.Classes.FirstOrDefault(c => cc.ClassroomId == c.ClassroomId) != null).Count > 1;
-                    //}
+                    if (!roomOverlapped)
+                    {
+                        roomOverlapped = concurrentSlots.FindAll(s => s.Classes.FirstOrDefault(c => cc.ClassroomId == c.ClassroomId) != null).Count > 1;
+                    }
+
+                    if (!notMeetExpectation && cc.ExpectedClassIndexes != null && cc.ExpectedClassIndexes.Length > 0)
+                    {
+                        notMeetExpectation = !cc.ExpectedClassIndexes.Contains(slot.ClassIndexInOneDay);
+                    }
                 }
 
                 // 如果教师没有冲突，加1分
@@ -412,15 +434,21 @@ namespace GaSchedule.Algorithm
                     score++;
                 }
 
-                //if (!roomOverlapped)
-                //{
-                //    score++;
-                //}
-                //this.criteria[ci + 1] = !roomOverlapped;
+                // 如果教室没有冲突，加1分
+                if (!roomOverlapped)
+                {
+                    score++;
+                }
+
+                // 如果满足了偏好的时间，加1分
+                if (!notMeetExpectation)
+                {
+                    score++;
+                }
             }
 
             // calculate fitess value based on score
-            this.Fitness = (float)score / (this.configuration.CourseClasses.Count * 2);
+            this.Fitness = (float)score / (this.configuration.CourseClasses.Count * 4);
         }
 
         #endregion

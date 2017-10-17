@@ -36,7 +36,6 @@ namespace ClassScheduler
             this.SwitchView(false);
             this.configuration = new Configuration();
             this.BindInputControls();
-            this.SetStatusBar();
         }
 
         private void SwitchView(bool showResult)
@@ -45,7 +44,6 @@ namespace ClassScheduler
             this.InputViewMenuItem.Checked = !showResult;
             this.panelOutput.Visible = showResult;
             this.OutputMenuItem.Checked = showResult;
-
             if (!showResult)
             {
                 this.SetStatusBar();
@@ -62,8 +60,7 @@ namespace ClassScheduler
                     this.configuration = (Configuration)serializer.Deserialize(file, typeof(Configuration));
                 }
 
-                //this.configuration = ConfigurationFactory.CreateFromJson(path);
-                //MessageBox.Show("文件加载成功！");
+                this.SwitchView(false);
             }
             catch (Exception)
             {
@@ -71,7 +68,6 @@ namespace ClassScheduler
                 return false;
             }
 
-            this.SetStatusBar();
             return true;
         }
 
@@ -185,18 +181,17 @@ namespace ClassScheduler
 
         private void RunMenuItem_Click(object sender, EventArgs e)
         {
-            if (this.configuration != null)
+            if (this.configuration != null && !backgroundWorker1.IsBusy)
             {
-                if (backgroundWorker1.IsBusy != true)
-                {
-                    // Start the asynchronous operation.
-                    backgroundWorker1.RunWorkerAsync();
-                }
+                // Reset status bar
+                this.toolStripStatusLabel2.Visible = true;
+                this.toolStripProgressBar1.Visible = true;
+                this.toolStripProgressBar1.Minimum = 0;
+                this.toolStripProgressBar1.Maximum = this.configuration.Parameters.MaxGeneration;
+
+                // Start the asynchronous operation.
+                backgroundWorker1.RunWorkerAsync();
             }
-
-            
-
-
         }
 
         private void comboBox2_SelectedIndexChanged(object sender, EventArgs e)
@@ -239,29 +234,15 @@ namespace ClassScheduler
         private void backgroundWorker1_DoWork(object sender, DoWorkEventArgs e)
         {
             BackgroundWorker worker = sender as BackgroundWorker;
-
-            this.ga = new GeneticAlgorithm(this.configuration, new TestObserver(this.toolStripStatusLabel1, this.toolStripStatusLabel2, this.toolStripProgressBar1));
+            this.ga = new GeneticAlgorithm(this.configuration, new TestObserver(worker));
             this.ga.Start();
-
-            //for (int i = 1; i <= 10; i++)
-            //{
-            //    if (worker.CancellationPending == true)
-            //    {
-            //        e.Cancel = true;
-            //        break;
-            //    }
-            //    else
-            //    {
-            //        // Perform a time consuming operation and report progress.
-            //        System.Threading.Thread.Sleep(500);
-            //        worker.ReportProgress(i * 10);
-            //    }
-            //}
         }
 
         private void backgroundWorker1_ProgressChanged(object sender, ProgressChangedEventArgs e)
         {
-            this.toolStripStatusLabel1.Text = (e.ProgressPercentage.ToString() + "%");
+            this.toolStripStatusLabel1.Text = "Computing...";
+            this.toolStripStatusLabel2.Text = e.UserState.ToString(); ;
+            this.toolStripProgressBar1.Value = e.ProgressPercentage;
         }
 
         private void backgroundWorker1_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
@@ -269,6 +250,8 @@ namespace ClassScheduler
             this.SwitchView(true);
             this.resultPerStudentsGroup = ResultAnalyzer.GetResultByStudentsGroups(this.configuration, this.ga);
             this.BindResultControls();
+            this.toolStripStatusLabel1.Text = "Complete";
+            this.toolStripProgressBar1.Visible = false;
             MessageBox.Show("Done");
         }
     }

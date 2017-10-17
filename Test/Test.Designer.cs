@@ -104,45 +104,45 @@
             // NewMenuItem
             // 
             this.NewMenuItem.Name = "NewMenuItem";
-            this.NewMenuItem.Size = new System.Drawing.Size(152, 22);
+            this.NewMenuItem.Size = new System.Drawing.Size(113, 22);
             this.NewMenuItem.Text = "新建";
             this.NewMenuItem.Click += new System.EventHandler(this.NewMenuItem_Click);
             // 
             // OpenMenuItem
             // 
             this.OpenMenuItem.Name = "OpenMenuItem";
-            this.OpenMenuItem.Size = new System.Drawing.Size(152, 22);
+            this.OpenMenuItem.Size = new System.Drawing.Size(113, 22);
             this.OpenMenuItem.Text = "打开";
             this.OpenMenuItem.Click += new System.EventHandler(this.OpenMenuItem_Click);
             // 
             // toolStripMenuItem2
             // 
             this.toolStripMenuItem2.Name = "toolStripMenuItem2";
-            this.toolStripMenuItem2.Size = new System.Drawing.Size(149, 6);
+            this.toolStripMenuItem2.Size = new System.Drawing.Size(110, 6);
             // 
             // SaveMenuItem
             // 
             this.SaveMenuItem.Name = "SaveMenuItem";
-            this.SaveMenuItem.Size = new System.Drawing.Size(152, 22);
+            this.SaveMenuItem.Size = new System.Drawing.Size(113, 22);
             this.SaveMenuItem.Text = "保存";
             this.SaveMenuItem.Click += new System.EventHandler(this.SaveMenuItem_Click);
             // 
             // SaveAsMenuItem
             // 
             this.SaveAsMenuItem.Name = "SaveAsMenuItem";
-            this.SaveAsMenuItem.Size = new System.Drawing.Size(152, 22);
+            this.SaveAsMenuItem.Size = new System.Drawing.Size(113, 22);
             this.SaveAsMenuItem.Text = "另存为";
             this.SaveAsMenuItem.Click += new System.EventHandler(this.SaveAsMenuItem_Click);
             // 
             // toolStripMenuItem1
             // 
             this.toolStripMenuItem1.Name = "toolStripMenuItem1";
-            this.toolStripMenuItem1.Size = new System.Drawing.Size(149, 6);
+            this.toolStripMenuItem1.Size = new System.Drawing.Size(110, 6);
             // 
             // RunMenuItem
             // 
             this.RunMenuItem.Name = "RunMenuItem";
-            this.RunMenuItem.Size = new System.Drawing.Size(152, 22);
+            this.RunMenuItem.Size = new System.Drawing.Size(113, 22);
             this.RunMenuItem.Text = " 排课";
             this.RunMenuItem.Click += new System.EventHandler(this.RunMenuItem_Click);
             // 
@@ -181,7 +181,7 @@
             // 
             this.panelInput.Controls.Add(this.splitContainer1);
             this.panelInput.Location = new System.Drawing.Point(0, 25);
-            this.panelInput.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.panelInput.Margin = new System.Windows.Forms.Padding(2);
             this.panelInput.Name = "panelInput";
             this.panelInput.Size = new System.Drawing.Size(496, 500);
             this.panelInput.TabIndex = 16;
@@ -190,7 +190,7 @@
             // 
             this.splitContainer1.Dock = System.Windows.Forms.DockStyle.Fill;
             this.splitContainer1.Location = new System.Drawing.Point(0, 0);
-            this.splitContainer1.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.splitContainer1.Margin = new System.Windows.Forms.Padding(2);
             this.splitContainer1.Name = "splitContainer1";
             // 
             // splitContainer1.Panel1
@@ -237,7 +237,7 @@
             this.propertyGrid1.Dock = System.Windows.Forms.DockStyle.Fill;
             this.propertyGrid1.LineColor = System.Drawing.SystemColors.ControlDark;
             this.propertyGrid1.Location = new System.Drawing.Point(0, 0);
-            this.propertyGrid1.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.propertyGrid1.Margin = new System.Windows.Forms.Padding(2);
             this.propertyGrid1.Name = "propertyGrid1";
             this.propertyGrid1.Size = new System.Drawing.Size(190, 500);
             this.propertyGrid1.TabIndex = 0;
@@ -247,7 +247,7 @@
             this.panelOutput.Controls.Add(this.richTextBox1);
             this.panelOutput.Controls.Add(this.comboBox2);
             this.panelOutput.Location = new System.Drawing.Point(500, 28);
-            this.panelOutput.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.panelOutput.Margin = new System.Windows.Forms.Padding(2);
             this.panelOutput.Name = "panelOutput";
             this.panelOutput.Size = new System.Drawing.Size(512, 497);
             this.panelOutput.TabIndex = 17;
@@ -256,7 +256,7 @@
             // 
             this.richTextBox1.Dock = System.Windows.Forms.DockStyle.Fill;
             this.richTextBox1.Location = new System.Drawing.Point(0, 21);
-            this.richTextBox1.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.richTextBox1.Margin = new System.Windows.Forms.Padding(2);
             this.richTextBox1.Name = "richTextBox1";
             this.richTextBox1.Size = new System.Drawing.Size(512, 476);
             this.richTextBox1.TabIndex = 14;

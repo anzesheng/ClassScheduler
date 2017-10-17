@@ -62,7 +62,7 @@ namespace GaSchedule.Model
         /// 需求：科目安排优先（比如优先排在上午）
         /// 需事先指定好
         /// </summary>
-        public int[] PreferredClassIndexes { get; private set; }
+        public int[] ExpectedClassIndexes { get; set; }
 
         /// <summary>
         /// 在第几个工作日上课，从0开始。
@@ -81,15 +81,15 @@ namespace GaSchedule.Model
         /// <summary>
         /// 专门为DataGrid控件创建的属性
         /// </summary>
-        public string PreferredClassIndexesStr
+        public string ExpectedClassIndexesStr
         {
             get
             {
-                return this.Convert(this.PreferredClassIndexes);
+                return this.Convert(this.ExpectedClassIndexes);
             }
             set
             {
-                this.PreferredClassIndexes = this.Convert(value);
+                this.ExpectedClassIndexes = this.Convert(value);
             }
         }
 
@@ -111,7 +111,7 @@ namespace GaSchedule.Model
                     }
                     else
                     {
-                        sb.Append($",{arr[0]}");
+                        sb.Append($",{arr[i]}");
                     }
                 }
             }
@@ -125,7 +125,7 @@ namespace GaSchedule.Model
             foreach (var item in str.Split(','))
             {
                 int idx = 0;
-                if (int.TryParse(item, out idx))
+                if (int.TryParse(item.Trim(), out idx))
                 {
                     list.Add(idx);
                 }

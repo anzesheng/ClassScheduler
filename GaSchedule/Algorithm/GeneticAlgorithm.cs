@@ -249,15 +249,19 @@ namespace GaSchedule.Algorithm
                 // 如果算法获得了更好的染色体
                 var newBest = this.GetBestChromosome();
                 if (best != newBest && this.observer != null)
+                {
                     // notify observer
-                    this.observer.NewBestChromosome(newBest);
+                    this.observer.NewBestChromosome(this.CurrentGeneration, newBest.Fitness);
+                }
 
                 this.CurrentGeneration++;
             }
 
             if (this.observer != null)
+            {
                 // notify observer that execution of algorithm has changed it state
                 this.observer.EvolutionStateChanged(state);
+            }
         }
 
         // Stops execution of algoruthm
