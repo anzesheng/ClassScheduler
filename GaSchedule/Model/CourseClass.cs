@@ -1,7 +1,4 @@
-﻿using GaSchedule.Algorithm;
-using Newtonsoft.Json;
-using System.Collections.Generic;
-using System.Linq;
+﻿using System.Collections.Generic;
 using System.Text;
 
 namespace GaSchedule.Model
@@ -11,10 +8,6 @@ namespace GaSchedule.Model
     /// </summary>
     public class CourseClass
     {
-        #region Constructors
-
-        #endregion
-
         #region Properties
 
         /// <summary>
@@ -93,7 +86,7 @@ namespace GaSchedule.Model
             }
         }
 
-        #endregion
+        #endregion Properties
 
         #region PrivateMethods
 
@@ -134,6 +127,6 @@ namespace GaSchedule.Model
             return list.ToArray();
         }
 
-        #endregion
+        #endregion PrivateMethods
     }
 }

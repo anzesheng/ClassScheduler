@@ -1,10 +1,5 @@
-﻿using GaSchedule.Model;
-using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
+﻿using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace GaSchedule.Algorithm
 {
@@ -67,6 +62,5 @@ namespace GaSchedule.Algorithm
 
             return result.ToString();
         }
-
     }
 }

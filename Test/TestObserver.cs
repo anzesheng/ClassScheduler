@@ -1,15 +1,9 @@
 ﻿using GaSchedule.Algorithm;
-using System;
-using System.Collections.Generic;
 using System.ComponentModel;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows.Forms;
 
 namespace ClassScheduler
 {
-    class TestObserver : IScheduleObserver
+    internal class TestObserver : IScheduleObserver
     {
         private BackgroundWorker worker;
 
@@ -21,7 +15,7 @@ namespace ClassScheduler
 
         public void EvolutionStateChanged(AlgorithmState newState)
         {
-            //throw new NotImplementedException();
+            // throw new NotImplementedException();
         }
 
         public void NewBestChromosome(int generation, float fitness)

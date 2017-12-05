@@ -1,5 +1,4 @@
 ﻿using System.Collections.Generic;
-using System.Linq;
 
 namespace GaSchedule.Model
 {
@@ -42,7 +41,7 @@ namespace GaSchedule.Model
             }
         }
 
-        #endregion
+        #endregion 构造
 
         #region 属性
 
@@ -80,10 +79,6 @@ namespace GaSchedule.Model
         /// </summary>
         public List<CourseClass> Classes { get; set; } = new List<CourseClass>();
 
-        #endregion
-
-        #region 方法
-
-        #endregion
+        #endregion 属性
     }
 }

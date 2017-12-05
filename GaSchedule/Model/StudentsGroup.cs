@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Collections.Generic;
 
 namespace GaSchedule.Model
 {
@@ -40,6 +36,6 @@ namespace GaSchedule.Model
         /// <summary>
         /// Gets or sets a list of classes that the students in the group attends.
         /// </summary>
-        List<CourseClass> AttendClasses { get; set; } = new List<CourseClass>();
+        private List<CourseClass> AttendClasses { get; set; } = new List<CourseClass>();
     }
 }

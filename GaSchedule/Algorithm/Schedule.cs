@@ -1,8 +1,9 @@
-﻿using GaSchedule.Model;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+
+using GaSchedule.Model;
 
 namespace GaSchedule.Algorithm
 {
@@ -16,12 +17,62 @@ namespace GaSchedule.Algorithm
         private readonly Configuration configuration;
         private Random random = new Random();
 
-        #endregion
+        #endregion Fields
+
+        #region Constructors
+
+        /// <summary>
+        /// 创建一个 <see cref="Schedule"/> 类实例。
+        /// </summary>
+        /// <param name="configuration">The configuration.</param>
+        public Schedule(Configuration configuration)
+        {
+            this.configuration = configuration;
+            this.Fitness = 0;
+
+            // 准备好时间槽容器，数组初始化会调用Slot的默认构造函数
+            this.InitialEmptySlots();
+        }
+
+        /// <summary>
+        /// 拷贝构造
+        /// </summary>
+        /// <param name="schedule">被拷贝者</param>
+        /// <param name="setupOnly">是否只拷贝size。True时只拷贝size，不拷贝内容。</param>
+        public Schedule(Schedule schedule, bool setupOnly)
+        {
+            this.configuration = schedule.configuration;
+
+            // 拷贝排课内容
+            if (setupOnly)
+            {
+                this.InitialEmptySlots();
+            }
+            else
+            {
+                // 拷贝槽位数据
+                this.Slots = new List<Slot>();
+                foreach (var s in schedule.Slots)
+                {
+                    this.Slots.Add(new Slot(s));
+                }
+
+                // 拷贝适应性
+                this.Fitness = schedule.Fitness;
+
+                this.SelfCheck();
+            }
+        }
+
+        #endregion Constructors
 
         #region Properties
 
         // 染色体的适应度
         public float Fitness { get; set; } = 0;
+
+        // 染色体的均匀度
+        public float Evenness { get; set; } = 0;
 
         /// <summary>
         /// 时间槽列表。一个时间槽表示一间教室的一个小时。
@@ -38,30 +89,184 @@ namespace GaSchedule.Algorithm
         /// </summary>
         public List<Slot> Slots { get; private set; }
 
-        /// <summary>
-        /// 排课结果，key是课堂，value是课堂的时间槽序号。
-        /// </summary>
-        //public Dictionary<CourseClass, int> ScheduledClasses { get; set; } = new Dictionary<CourseClass, int>();
+        #endregion Properties
 
-        #endregion
-
-        #region Constructors and Destructors
+        #region Members
 
         /// <summary>
-        /// Initializes chromosomes with configuration block (setup of chromosome)
-        /// 初始化染色体
+        /// 计算染色体的适应度
         /// </summary>
-        /// <param name="numberOfCrossoverPoints">交换点的数量</param>
-        /// <param name="mutationSize">突变的数量</param>
-        /// <param name="crossoverProbability">杂交的可能性</param>
-        /// <param name="mutationProbability">突变的可能性</param>
-        public Schedule(Configuration configuration)
+        public void CalculateFitness()
         {
-            this.configuration = configuration;
-            this.Fitness = 0;
+            int score = 0;
 
-            // 准备好时间槽容器，数组初始化会调用Slot的默认构造函数
-            this.InitialEmptySlots();
+            // check criterias and calculate scores for each class in schedule
+            foreach (var cc in this.configuration.CourseClasses)
+            {
+                // 同一时间，教师，班级和教室只能上一门课
+                bool teacherOverlapped = false;
+                bool groupOverlapped = false;
+                bool roomOverlapped = false;
+
+                // 是否符合期望的排课要求
+                bool notMeetExpectation = false;
+
+                foreach (var slot in this.GetSlots(cc))
+                {
+                    if (teacherOverlapped && groupOverlapped && roomOverlapped && notMeetExpectation)
+                    {
+                        break;
+                    }
+
+                    // 获得与当前槽工作日和课次相同的所有槽位，包括自己
+                    var concurrentSlots = this.Slots.FindAll(s => s.DayIndex == slot.DayIndex && s.ClassIndexInOneDay == slot.ClassIndexInOneDay);
+
+                    if (!teacherOverlapped)
+                    {
+                        // 如果当前槽位的老师同时上多节课，说明老师冲突
+                        teacherOverlapped = concurrentSlots.FindAll(s => s.Classes.FirstOrDefault(c => c.TeacherId == cc.TeacherId) != null).Count > 1;
+                    }
+
+                    if (!groupOverlapped)
+                    {
+                        if (slot.Classes.Count > 1)
+                        {
+                            // 一个slot只能排一节课
+                            groupOverlapped = true;
+                        }
+                        else
+                        {
+                            // 同一时间班级要上多于一门课程（不可能发生的情况）
+                            groupOverlapped = concurrentSlots.FindAll(s => s.Classes.FirstOrDefault(c => cc.StudentsGroupId == c.StudentsGroupId) != null).Count > 1;
+                        }
+                    }
+
+                    if (!roomOverlapped)
+                    {
+                        // 在当前槽的时段上，教室被多次使用，说明教室冲突了
+                        roomOverlapped = concurrentSlots.FindAll(s => s.Classes.FirstOrDefault(c => cc.ClassroomId == c.ClassroomId) != null).Count > 1;
+                    }
+
+                    if (!notMeetExpectation && cc.ExpectedClassIndexes != null && cc.ExpectedClassIndexes.Length > 0)
+                    {
+                        // 检查课程是否排在期待的时段中
+                        notMeetExpectation = !cc.ExpectedClassIndexes.Contains(slot.ClassIndexInOneDay);
+                    }
+                }
+
+                // 如果教师没有冲突，加1分
+                if (!teacherOverlapped)
+                {
+                    score++;
+                }
+
+                // 如果学生组上课时间没有冲突，加1分
+                if (!groupOverlapped)
+                {
+                    score++;
+                }
+
+                // 如果教室没有冲突，加1分
+                if (!roomOverlapped)
+                {
+                    score++;
+                }
+
+                // 如果满足了偏好的时间，加1分
+                if (!notMeetExpectation)
+                {
+                    score++;
+                }
+
+                
+            }
+
+            // calculate fitess value based on score
+            this.Fitness = (float)score / (this.configuration.CourseClasses.Count * 4);
+        }
+
+        /// <summary>
+        /// 计算课程排列的均匀度。
+        /// </summary>
+        public void CalculateEvenness()
+        {
+            // 相同课堂（同班级，同老师，同科目）的均匀分布
+            // 先获得课程列表
+            // 逐个计算均匀度，满分为1分
+            // 用总分除以相同课堂数，得到当前课程表的均匀度适应度
+        }
+
+        /// <summary>
+        /// 执行均匀杂交
+        /// </summary>
+        /// <param name="parent2">The parent 2.</param>
+        /// <returns>杂交后的课程表</returns>
+        public Schedule Crossover(Schedule parent2)
+        {
+            this.SelfCheck();
+            parent2.SelfCheck();
+
+            // 看看这次是否需要杂交，如果不需要
+            if (this.Rand() % 100 > this.configuration.Parameters.CrossoverProbability)
+            {
+                // 不进行杂交，而是直接复制和返回第一个父本
+                return new Schedule(this, false);
+            }
+
+            // 拷贝第一个父本创建新染色体。只拷贝配置信息，不拷贝内容。
+            Schedule newSchedule = new Schedule(this, true);
+
+            // 交换点数组
+            bool[] cp = new bool[this.configuration.CourseClasses.Count];
+
+            // 随机选择指定数量的交换点
+            for (int i = 0; i < this.configuration.Parameters.NumberOfCrossoverPoints; i++)
+            {
+                while (true)
+                {
+                    int pos = this.Rand() % this.configuration.CourseClasses.Count;
+                    if (!cp[pos])
+                    {
+                        cp[pos] = true;
+                        break;
+                    }
+                }
+            }
+
+            // 确定第一个基因从那个父亲染色体中获取，双亲各有一半的概率被选中。
+            bool first = this.Rand() % 2 == 0;
+
+            int idx = 0;
+            foreach (var cc in this.configuration.CourseClasses)
+            {
+                // 选择父本
+                Schedule parent = first ? this : parent2;
+
+                // all time-space slots of class are copied
+                foreach (var slot in parent.GetSlots(cc))
+                {
+                    // may already has class for fixed slot
+                    if (!newSchedule.Slots[slot.SlotIndex].Classes.Contains(cc))
+                    {
+                        newSchedule.Slots[slot.SlotIndex].Classes.Add(cc);
+                    }
+                }
+
+                // 交叉点
+                if (cp[idx++])
+                {
+                    // 切换父本
+                    first = !first;
+                }
+            }
+
+            // 计算新染色体的适应度
+            newSchedule.CalculateFitness();
+
+            newSchedule.SelfCheck();
+
+            // return smart pointer to offspring
+            return newSchedule;
         }
 
         /// <summary>
@@ -105,36 +310,9 @@ namespace GaSchedule.Algorithm
         }
 
         /// <summary>
-        /// 拷贝构造
+        /// 创建新染色体，拷贝设置但是随机排列课程
         /// </summary>
-        /// <param name="schedule">被拷贝者</param>
-        /// <param name="setupOnly">是否只拷贝size。True时只拷贝size，不拷贝内容。</param>
-        public Schedule(Schedule schedule, bool setupOnly)
-        {
-            this.configuration = schedule.configuration;
-
-            // 拷贝排课内容
-            if (setupOnly)
-            {
-                this.InitialEmptySlots();
-            }
-            else
-            {
-                // 拷贝槽位数据
-                this.Slots = new List<Slot>();
-                foreach (var s in schedule.Slots)
-                {
-                    this.Slots.Add(new Slot(s));
-                }
-
-                // 拷贝适应性
-                this.Fitness = schedule.Fitness;
-
-                this.SelfCheck();
-            }
-        }
-
-        // 创建新染色体，拷贝设置但是随机排列课程
+        /// <returns>新课程表</returns>
         public Schedule MakeNewFromPrototype()
         {
             // 创建新染色体，只拷贝当前染色体的size，不拷贝内容
@@ -162,90 +340,6 @@ namespace GaSchedule.Algorithm
             return newSchedule;
         }
 
-        #endregion
-
-        #region Properties
-
-
-
-        #endregion
-
-        #region Members
-
-        // Performes crossover operation using to chromosomes and returns pointer to offspring
-        // 执行均匀杂交
-        public Schedule Crossover(Schedule parent2)
-        {
-            this.SelfCheck();
-            parent2.SelfCheck();
-
-            // check probability of crossover operation
-            // 看看这次是否需要杂交，如果不需要
-            if (this.Rand() % 100 > this.configuration.Parameters.CrossoverProbability)
-            {
-                // no crossover, just copy first parent
-                // 不进行杂交，而是直接复制和返回第一个父本
-                return new Schedule(this, false);
-            }
-
-            // new chromosome object, copy chromosome setup
-            // 拷贝第一个父本创建新染色体。只拷贝配置信息，不拷贝内容。
-            Schedule newSchedule = new Schedule(this, true);
-
-            // 交换点数组
-            bool[] cp = new bool[this.configuration.CourseClasses.Count];
-
-            // determine crossover point (randomly)
-            // 随机选择指定数量的交换点
-            for (int i = 0; i < this.configuration.Parameters.NumberOfCrossoverPoints; i++)
-            {
-                while (true)
-                {
-                    int pos = Rand() % this.configuration.CourseClasses.Count;
-                    if (!cp[pos])
-                    {
-                        cp[pos] = true;
-                        break;
-                    }
-                }
-            }
-
-            // 确定第一个基因从那个父亲染色体中获取，双亲各有一半的概率被选中。
-            bool first = Rand() % 2 == 0;
-
-            int idx = 0;
-            foreach (var cc in this.configuration.CourseClasses)
-            {
-                // 选择父本
-                Schedule parent = first ? this : parent2;
-
-                // all time-space slots of class are copied
-                foreach (var slot in parent.GetSlots(cc))
-                {
-                    // may already has class for fixed slot
-                    if (!newSchedule.Slots[slot.SlotIndex].Classes.Contains(cc))
-                    {
-                        newSchedule.Slots[slot.SlotIndex].Classes.Add(cc);
-                    }
-                }
-
-                // 交叉点
-                if (cp[idx++])
-                {
-                    // 切换父本
-                    first = !first;
-                }
-            }
-
-            // 计算新染色体的适应度
-            newSchedule.CalculateFitness();
-
-            newSchedule.SelfCheck();
-
-            // return smart pointer to offspring
-            return newSchedule;
-        }
-
         // Performs mutation on chromosome
         // 在当前染色体上执行变异
         public void Mutation()
@@ -253,7 +347,7 @@ namespace GaSchedule.Algorithm
             this.SelfCheck();
 
             // 检查是否需要变异
-            if (Rand() % 100 > this.configuration.Parameters.MutationProbability)
+            if (this.Rand() % 100 > this.configuration.Parameters.MutationProbability)
             {
                 return;
             }
@@ -282,29 +376,13 @@ namespace GaSchedule.Algorithm
 
                 // 验证课程节数
                 var count = this.Slots.FindAll(s => s.Classes.Contains(cc)).Count;
-                Debug.Assert(cc.Duration == count);
+                Debug.Assert(cc.Duration == count, "确保排课结果中的课程的节数没有变化");
             }
 
             // 重新计算适应度
-            CalculateFitness();
+            this.CalculateFitness();
 
             this.SelfCheck();
-        }
-
-        /// <summary>
-        /// 随机选择一个可排课的课堂
-        /// </summary>
-        /// <returns>一个课堂</returns>
-        private CourseClass GetRandomUnfixedClass()
-        {
-            CourseClass cc = null;
-
-            do
-            {
-                cc = this.configuration.CourseClasses[Rand() % this.configuration.CourseClasses.Count];
-            } while (cc.IsFixed);
-
-            return cc;
         }
 
         private Slot GetNewSlot(CourseClass cc)
@@ -319,10 +397,10 @@ namespace GaSchedule.Algorithm
             do
             {
                 // 第几个工作日
-                int day = Rand() % this.configuration.Parameters.WorkingDaysNumber;
+                int day = this.Rand() % this.configuration.Parameters.WorkingDaysNumber;
 
                 // 第几节课开始上，考虑了duration
-                int time = Rand() % (this.configuration.Parameters.NumberOfClassPerDay + 1 - cc.Duration);
+                int time = this.Rand() % (this.configuration.Parameters.NumberOfClassPerDay + 1 - cc.Duration);
 
                 // 如果用户有偏好，前5次尝试按照用户偏好优先。如果不能成功，则忽略偏好。
                 if (count < 5 && cc.ExpectedClassIndexes != null && cc.ExpectedClassIndexes.Length > 0)
@@ -333,7 +411,7 @@ namespace GaSchedule.Algorithm
                     }
                     else
                     {
-                        int idx = Rand() % (cc.ExpectedClassIndexes.Length);
+                        int idx = this.Rand() % cc.ExpectedClassIndexes.Length;
                         time = cc.ExpectedClassIndexes[idx];
                     }
                 }
@@ -363,102 +441,32 @@ namespace GaSchedule.Algorithm
                 {
                     break;
                 }
-
-            } while (isFixed || count++ < 10);
+            }
+            while (isFixed || count++ < 10);
 
             return newSlot;
         }
 
-        // Calculates fitness value of chromosome
-        // 计算染色体的适应度
-        public void CalculateFitness()
+        /// <summary>
+        /// 随机选择一个可排课的课堂
+        /// </summary>
+        /// <returns>一个课堂</returns>
+        private CourseClass GetRandomUnfixedClass()
         {
-            int score = 0;
+            CourseClass cc = null;
 
-            // check criterias and calculate scores for each class in schedule
-            foreach (var cc in this.configuration.CourseClasses)
+            do
             {
-                // 同一时间，班级和教室只能上一门课
-                bool teacherOverlapped = false;
-                bool groupOverlapped = false;
-                bool roomOverlapped = false;
-                bool notMeetExpectation = false;
-                foreach (var slot in this.GetSlots(cc))
-                {
-                    if (teacherOverlapped && groupOverlapped && roomOverlapped && notMeetExpectation)
-                    {
-                        break;
-                    }
-
-                    var concurrentSlots = this.Slots.FindAll(s => s.DayIndex == slot.DayIndex && s.ClassIndexInOneDay == slot.ClassIndexInOneDay);
-
-                    if (!teacherOverlapped)
-                    {
-                        teacherOverlapped = concurrentSlots.FindAll(s => s.Classes.FirstOrDefault(c => c.TeacherId == cc.TeacherId) != null).Count > 1;
-                    }
-
-                    if (!groupOverlapped)
-                    {
-                        if (slot.Classes.Count > 1)
-                        {
-                            // 一个slot只能排一节课
-                            groupOverlapped = true;
-                        }
-                        else
-                        {
-                            // 同一时间班级要上多于一门课程（不可能发生的情况）
-                            groupOverlapped = concurrentSlots.FindAll(s => s.Classes.FirstOrDefault(c => cc.StudentsGroupId == c.StudentsGroupId) != null).Count > 1;
-                        }
-                    }
-
-                    if (!roomOverlapped)
-                    {
-                        roomOverlapped = concurrentSlots.FindAll(s => s.Classes.FirstOrDefault(c => cc.ClassroomId == c.ClassroomId) != null).Count > 1;
-                    }
-
-                    if (!notMeetExpectation && cc.ExpectedClassIndexes != null && cc.ExpectedClassIndexes.Length > 0)
-                    {
-                        notMeetExpectation = !cc.ExpectedClassIndexes.Contains(slot.ClassIndexInOneDay);
-                    }
-                }
-
-                // 如果教师没有冲突，加1分
-                if (!teacherOverlapped)
-                {
-                    score++;
-                }
-
-                // 如果学生组上课时间没有冲突，加1分
-                if (!groupOverlapped)
-                {
-                    score++;
-                }
-
-                // 如果教室没有冲突，加1分
-                if (!roomOverlapped)
-                {
-                    score++;
-                }
-
-                // 如果满足了偏好的时间，加1分
-                if (!notMeetExpectation)
-                {
-                    score++;
-                }
+                cc = this.configuration.CourseClasses[this.Rand() % this.configuration.CourseClasses.Count];
             }
+            while (cc.IsFixed);
 
-            // calculate fitess value based on score
-            this.Fitness = (float)score / (this.configuration.CourseClasses.Count * 4);
+            return cc;
         }
 
-        #endregion
+        #endregion Members
 
         #region Priviate methods
-
-        private int Rand()
-        {
-            return this.random.Next();
-        }
 
         private Slot GetSlot(int d, int g, int c)
         {
@@ -470,23 +478,30 @@ namespace GaSchedule.Algorithm
             return this.Slots.FindAll(s => s.Classes.Contains(cc));
         }
 
+        private int Rand()
+        {
+            return this.random.Next();
+        }
+
         private void SelfCheck()
         {
+            // 要排的课堂数
             int count1 = 0;
             foreach (var c in this.configuration.CourseClasses)
             {
                 count1 += c.Duration;
             }
 
+            // 排课结果中的课堂数
             int count2 = 0;
             foreach (var s in this.Slots)
             {
                 count2 += s.Classes.Count;
             }
 
-            Debug.Assert(count2 == 0 || count1 == count2);
+            Debug.Assert(count2 == 0 || count1 == count2, "排课结果中课程数量不正确");
         }
 
-        #endregion
+        #endregion Priviate methods
     }
 }

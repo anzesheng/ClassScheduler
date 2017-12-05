@@ -2,14 +2,8 @@
 using GaSchedule.Model;
 using Newtonsoft.Json;
 using System;
-using System.Collections.Generic;
 using System.ComponentModel;
-using System.Data;
-using System.Drawing;
 using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 
 namespace ClassScheduler
@@ -108,15 +102,19 @@ namespace ClassScheduler
                 case "课程安排":
                     this.dataGridView1.DataSource = new BindingList<CourseClass>(this.configuration.CourseClasses);
                     break;
+
                 case "老师":
                     this.dataGridView1.DataSource = new BindingList<Teacher>(this.configuration.Teachers);
                     break;
+
                 case "班级":
                     this.dataGridView1.DataSource = new BindingList<StudentsGroup>(this.configuration.StudentsGroups);
                     break;
+
                 case "学科":
                     this.dataGridView1.DataSource = new BindingList<Course>(this.configuration.Courses);
                     break;
+
                 default:
                     break;
             }
@@ -206,9 +204,11 @@ namespace ClassScheduler
                 case "按班级":
                     this.richTextBox1.Text = this.resultPerStudentsGroup;
                     break;
+
                 case "按老师":
                     this.richTextBox1.Text = this.resultPerTeacher;
                     break;
+
                 default:
                     break;
             }

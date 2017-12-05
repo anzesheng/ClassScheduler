@@ -1,168 +1,148 @@
-﻿using GaSchedule.Model;
-using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System;
 
 namespace GaSchedule.Algorithm
 {
-    public enum AlgorithmState
-    {
-        AS_USER_STOPED,
-        AS_CRITERIA_STOPPED,
-        AS_RUNNING
-    };
-
     public class GeneticAlgorithm
     {
         #region Fields
 
-        private Random random = new Random();
-
-        private int Rand()
-        {
-            return this.random.Next();
-        }
-
-        // Population of chromosomes
-        // 染色体族群，染色体数量由算法用户指定，不能小于2个
-        public Schedule[] Chromosomes { get; set; }
-
-        // Inidicates wheahter chromosome belongs to best chromosome group
-        // 用于标记最优染色体的数组，长度等于族群中染色体的总数
-        public bool[] BestFlags;
-
-        // Indices of best chromosomes
-        // 最优染色体的索引表，长度是由算法的用户指定的，是固定的
+        /// <summary>
+        /// 最优染色体的索引表，长度是由算法的用户指定的，是固定的。
+        /// </summary>
         private int[] bestChromosomes;
 
-        // Number of best chromosomes currently saved in best chromosome group
-        // 当前选出的最优染色体的数量，初值为0，在计算过程中会发生变化
+        /// <summary>
+        /// 当前选出的最优染色体的数量，初值为0，在计算过程中会发生变化。
+        /// </summary>
         private int currentBestSize;
 
+        /// <summary>
+        /// 观察者。
+        /// </summary>
         private IScheduleObserver observer;
 
-        // Prototype of chromosomes in population
-        // 种群中染色体的原型
+        /// <summary>
+        /// 种群中染色体的原型。
+        /// </summary>
         private Schedule prototype;
 
-        // State of execution of algorithm
-        // 算法的执行状态
-        private AlgorithmState state;
+        /// <summary>
+        /// 随机整数生成器。
+        /// </summary>
+        private Random random = new Random();
 
         /// <summary>
-        /// Initializes a new instance of the genetic algorithm class.
-        /// 初始化算法
+        /// 算法的当前执行状态。
         /// </summary>
-        /// <param name="numberOfChromosomes">染色体数量</param>
-        /// <param name="replaceByGeneration">The replace by generation.每代替换的数量</param>
-        /// <param name="trackBest">The track best.</param>
-        /// <param name="prototype">The prototype.原型染色体</param>
-        /// <param name="observer">The observer.观察者</param>
+        private AlgorithmState state;
+
+        #endregion Fields
+
+        #region Constructors
+
+        /// <summary>
+        /// 创建一个 <see cref="GeneticAlgorithm"/> 类实例。
+        /// </summary>
+        /// <param name="configuration">算法参数</param>
+        /// <param name="observer">观察者</param>
         public GeneticAlgorithm(Configuration configuration, IScheduleObserver observer)
         {
-            this.configuration = configuration;
+            this.Configuration = configuration;
             this.observer = observer;
 
             this.currentBestSize = 0;
             this.CurrentGeneration = 0;
             this.state = AlgorithmState.AS_USER_STOPED;
 
-            // make prototype of chromosomes
             // 创建染色体原型
-            this.prototype = new Schedule(this.configuration);
+            this.prototype = new Schedule(this.Configuration);
 
-            // reserve space for population
             // 为族群保留空间
-            this.Chromosomes = new Schedule[this.configuration.Parameters.NumberOfChromosomes];
-            this.BestFlags = new bool[this.configuration.Parameters.NumberOfChromosomes];
+            this.Chromosomes = new Schedule[this.Configuration.Parameters.NumberOfChromosomes];
 
-            // reserve space for best chromosome group
             // 初始化最优染色体索引
-            this.bestChromosomes = new int[this.configuration.Parameters.TrackBestNumber];
-
-            // clear population
-            // 清空族群
-            //for (int i = Chromosomes.Length - 1; i >= 0; --i)
-            //{
-            //    Chromosomes[i] = null;
-            //    BestFlags[i] = false;
-            //}
-
+            this.BestFlags = new bool[this.Configuration.Parameters.NumberOfChromosomes];
+            this.bestChromosomes = new int[this.Configuration.Parameters.TrackBestNumber];
         }
 
-        #endregion
+        #endregion Constructors
 
         #region Properties
 
-        public Configuration configuration { get; set; }
+        /// <summary>
+        /// 用于标记最优染色体的数组，长度等于族群中染色体的总数。
+        /// </summary>
+        public bool[] BestFlags { get; set; }
 
-        // Current generation
-        // 当代
+        /// <summary>
+        /// 染色体族群，染色体数量由算法用户指定，不能小于2个。
+        /// </summary>
+        public Schedule[] Chromosomes { get; set; }
+
+        /// <summary>
+        /// 算法的参数集合
+        /// </summary>
+        public Configuration Configuration { get; set; }
+
+        /// <summary>
+        /// 当代。
+        /// </summary>
         public int CurrentGeneration { get; private set; }
 
-        // Returns pointer to best chromosomes in population
-        // 获得最优染色体
+        /// <summary>
+        /// Gets or sets the state.
+        /// </summary>
+        private AlgorithmState State
+        {
+            get
+            {
+                return this.state;
+            }
+
+            set
+            {
+                this.state = value;
+
+                // 通知观察者执行状态变化
+                this.observer?.EvolutionStateChanged(this.state);
+            }
+        }
+
+        #endregion Properties
+
+        #region Public Methods
+
+        /// <summary>
+        /// 获得最优染色体。
+        /// </summary>
+        /// <returns>当前最优染色体</returns>
         public Schedule GetBestChromosome()
         {
             // 返回最优组里的第一个染色体
             return this.Chromosomes[this.bestChromosomes[0]];
         }
 
-        // Returns current generation
-        public int GetCurrentGeneration()
-        {
-            return this.CurrentGeneration;
-        }
-
-        // Returns pointe to algorithm's observer
-        public IScheduleObserver GetObserver()
-        {
-            return this.observer;
-        }
-
-        #endregion
-
-        #region Public Methods
-
-        // Starts and executes algorithm
         // 开始执行算法
         public void Start()
         {
             // 如果没有原型染色体，说明当前算法未被初始化，不能开始计算
             if (this.prototype == null)
             {
-                return;
+                throw new Exception("没有原型染色体，当前算法未被初始化，不能开始计算。");
             }
 
-            //CSingleLock lock (&_stateSect, TRUE );
-
-            // do not run already running algorithm
             // 如果正在运算则返回
             if (this.state == AlgorithmState.AS_RUNNING)
             {
                 return;
             }
 
-            // 标记为正在计算
+            // 将状态修改为正在计算
             this.state = AlgorithmState.AS_RUNNING;
 
-            //lock.Unlock();
-
-            // 通知观察者执行状态变化
-            if (this.observer != null)
-            {
-                // notify observer that execution of algorithm has changed it state
-                observer.EvolutionStateChanged(this.state);
-            }
-
-            // clear best chromosome group from previous execution
             // 清空上次执行的最优染色体组
             this.ClearBest();
 
-            // initialize new population with chromosomes randomly built using prototype
             // 使用染色体初始化新族群，使用原型创建出所有的染色体
             for (int i = 0; i < this.Chromosomes.Length; i++)
             {
@@ -179,39 +159,30 @@ namespace GaSchedule.Algorithm
             // 开始运算，直到用户停止或算法找到最优解
             while (true)
             {
-                //lock.Lock();
-
-                // user has stopped execution?
-                // 用户停止执行
+                // 用户停止了执行？
                 if (this.state != AlgorithmState.AS_RUNNING)
                 {
-                    //lock.Unlock();
                     break;
                 }
 
                 // 获得当前最优染色体
                 Schedule best = this.GetBestChromosome();
 
-                // algorithm has reached criteria?
                 // 如果当前最优染色体已经是最优，结束计算
-                if (best.Fitness >= 1 || this.CurrentGeneration > this.configuration.Parameters.MaxGeneration)
+                if (best.Fitness >= 1 || this.CurrentGeneration > this.Configuration.Parameters.MaxGeneration)
                 {
                     this.state = AlgorithmState.AS_CRITERIA_STOPPED;
-                    //lock.Unlock();
                     break;
                 }
 
-                //lock.Unlock();
-
-                // produce offspring
                 // 按需要替换的染色体生产相应数量的后代
-                Schedule[] offspring = new Schedule[this.configuration.Parameters.ReplaceByGeneration];
-                for (int j = 0; j < this.configuration.Parameters.ReplaceByGeneration; j++)
+                Schedule[] offspring = new Schedule[this.Configuration.Parameters.ReplaceByGeneration];
+                for (int j = 0; j < this.Configuration.Parameters.ReplaceByGeneration; j++)
                 {
                     // selects parent randomly
                     // 在当前的族群中随机选取两个染色体作为双亲
-                    Schedule p1 = Chromosomes[Rand() % Chromosomes.Length];
-                    Schedule p2 = Chromosomes[Rand() % Chromosomes.Length];
+                    Schedule p1 = this.Chromosomes[this.Rand() % this.Chromosomes.Length];
+                    Schedule p2 = this.Chromosomes[this.Rand() % this.Chromosomes.Length];
 
                     // 进行杂交
                     offspring[j] = p1.Crossover(p2);
@@ -220,7 +191,6 @@ namespace GaSchedule.Algorithm
                     offspring[j].Mutation();
                 }
 
-                // replace chromosomes of current operation with offspring
                 // 用后代替换当前操作中的染色体
                 foreach (var os in offspring)
                 {
@@ -228,53 +198,45 @@ namespace GaSchedule.Algorithm
                     int ci;
                     do
                     {
-                        // select chromosome for replacement randomly
                         // 随机选择一个将被替换的染色体
-                        ci = this.Rand() % (int)this.Chromosomes.Length;
+                        ci = this.Rand() % this.Chromosomes.Length;
+                    }
+                    while (this.IsInBest(ci)); // 保证最后的染色体不被替换掉
 
-                        // protect best chromosomes from replacement
-                        // 保证最后的染色体不被替换掉
-                    } while (IsInBest(ci));
-
-                    // replace chromosomes
                     // 用后代替换染色体
                     this.Chromosomes[ci] = os;
 
-                    // try to add new chromosomes in best chromosome group
                     // 尝试将新染色体放入最优组中
-                    AddToBest(ci);
+                    this.AddToBest(ci);
                 }
 
-                // algorithm has found new best chromosome
                 // 如果算法获得了更好的染色体
                 var newBest = this.GetBestChromosome();
                 if (best != newBest && this.observer != null)
                 {
-                    // notify observer
                     this.observer.NewBestChromosome(this.CurrentGeneration, newBest.Fitness);
                 }
 
                 this.CurrentGeneration++;
             }
-
-            if (this.observer != null)
-            {
-                // notify observer that execution of algorithm has changed it state
-                this.observer.EvolutionStateChanged(state);
-            }
         }
 
-        // Stops execution of algoruthm
+        /// <summary>
+        /// Stops execution of algoruthm.
+        /// </summary>
         public void Stop()
         {
             throw new NotImplementedException();
         }
 
-        #endregion
+        #endregion Public Methods
 
         #region Private Methods
 
-        // Tries to add chromosomes in best chromosome group
+        /// <summary>
+        /// Tries to add chromosomes in best chromosome group.
+        /// </summary>
+        /// <param name="chromosomeIndex">Index of the chromosome.</param>
         private void AddToBest(int chromosomeIndex)
         {
             // 如果新染色体已经是最优解
@@ -297,7 +259,6 @@ namespace GaSchedule.Algorithm
                     return;
                 }
             }
-
 
             // find place for new chromosome
             // 为最新的染色体在最优组里找一个位置
@@ -340,13 +301,9 @@ namespace GaSchedule.Algorithm
             }
         }
 
-        // Returns TRUE if chromosome belongs to best chromosome group
-        private bool IsInBest(int chromosomeIndex)
-        {
-            return this.BestFlags[chromosomeIndex];
-        }
-
-        // Clears best chromosome group
+        /// <summary>
+        /// Clears best chromosome group.
+        /// </summary>
         private void ClearBest()
         {
             for (int i = 0; i < this.BestFlags.Length; i++)
@@ -357,6 +314,27 @@ namespace GaSchedule.Algorithm
             this.currentBestSize = 0;
         }
 
-        #endregion
+        /// <summary>
+        /// 判断染色体是否在最优列表中。
+        /// </summary>
+        /// <param name="chromosomeIndex">Index of the chromosome.</param>
+        /// <returns>
+        ///   <c>true</c> if [is in best] [the specified chromosome index]; otherwise, <c>false</c>.
+        /// </returns>
+        private bool IsInBest(int chromosomeIndex)
+        {
+            return this.BestFlags[chromosomeIndex];
+        }
+
+        /// <summary>
+        /// 获得一个随机整数
+        /// </summary>
+        /// <returns>一个随机整数</returns>
+        private int Rand()
+        {
+            return this.random.Next();
+        }
+
+        #endregion Private Methods
     }
 }

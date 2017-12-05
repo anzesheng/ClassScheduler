@@ -47,6 +47,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Algorithm\AlgorithmParameters.cs" />
+    <Compile Include="Algorithm\AlgorithmState.cs" />
     <Compile Include="Algorithm\Configuration.cs" />
     <Compile Include="Algorithm\GeneticAlgorithm.cs" />
     <Compile Include="Algorithm\IScheduleObserver.cs" />

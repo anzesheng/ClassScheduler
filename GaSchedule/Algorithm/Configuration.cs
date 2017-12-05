@@ -1,11 +1,7 @@
 ﻿using GaSchedule.Model;
-using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace GaSchedule.Algorithm
 {
@@ -15,7 +11,7 @@ namespace GaSchedule.Algorithm
 
         private Random random = new Random();
 
-        #endregion
+        #endregion Fields
 
         #region Constructors and Destructors
 
@@ -25,7 +21,7 @@ namespace GaSchedule.Algorithm
             this.Parameters = new AlgorithmParameters();
         }
 
-        #endregion
+        #endregion Constructors and Destructors
 
         #region Properties
 
@@ -55,7 +51,7 @@ namespace GaSchedule.Algorithm
             }
         }
 
-        #endregion
+        #endregion Properties
 
         #region Public Methods
 
@@ -85,6 +81,6 @@ namespace GaSchedule.Algorithm
             return this.StudentsGroups.FindIndex(sg => sg.Id == cc.StudentsGroupId);
         }
 
-        #endregion
+        #endregion Public Methods
     }
 }
