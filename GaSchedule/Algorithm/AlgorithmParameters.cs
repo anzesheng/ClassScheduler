@@ -10,6 +10,9 @@
 
         public int MaxGeneration { get; set; } = 10000;
 
+        public float MinFitness { get; set; } = 1;
+        public float MinEvenness { get; set; } = 0.8f;
+
         /// <summary>
         /// 每代族群中染色体的数量
         /// </summary>

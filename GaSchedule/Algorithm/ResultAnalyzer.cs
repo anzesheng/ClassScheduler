@@ -8,10 +8,10 @@ namespace GaSchedule.Algorithm
         public static string GetResultByStudentsGroups(Configuration conf, GeneticAlgorithm ga)
         {
             StringBuilder result = new StringBuilder();
-            string spliter = ", ";
+            string spliter = "\t";
             var schedule = ga.GetBestChromosome();
 
-            result.AppendLine($"Fitness: {ga.GetBestChromosome().Fitness}, Generation: {ga.CurrentGeneration}");
+            result.AppendLine($"Fitness: {ga.GetBestChromosome().Fitness}, Evenness: {ga.GetBestChromosome().Evenness}, Generation: {ga.CurrentGeneration}");
 
             // 每个班级为一个小节
             for (int groupIdx = 0; groupIdx < conf.StudentsGroups.Count; groupIdx++)

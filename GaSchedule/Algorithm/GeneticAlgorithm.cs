@@ -169,7 +169,8 @@ namespace GaSchedule.Algorithm
                 Schedule best = this.GetBestChromosome();
 
                 // 如果当前最优染色体已经是最优，结束计算
-                if (best.Fitness >= 1 || this.CurrentGeneration > this.Configuration.Parameters.MaxGeneration)
+                if ((best.Fitness >= this.Configuration.Parameters.MinFitness && best.Evenness >= this.Configuration.Parameters.MinEvenness) ||
+                    this.CurrentGeneration > this.Configuration.Parameters.MaxGeneration)
                 {
                     this.state = AlgorithmState.AS_CRITERIA_STOPPED;
                     break;
@@ -214,7 +215,7 @@ namespace GaSchedule.Algorithm
                 var newBest = this.GetBestChromosome();
                 if (best != newBest && this.observer != null)
                 {
-                    this.observer.NewBestChromosome(this.CurrentGeneration, newBest.Fitness);
+                    this.observer.NewBestChromosome(this.CurrentGeneration, newBest.Fitness, newBest.Evenness);
                 }
 
                 this.CurrentGeneration++;
@@ -254,10 +255,15 @@ namespace GaSchedule.Algorithm
             if (this.currentBestSize == this.bestChromosomes.Length)
             {
                 var lastBest = this.Chromosomes[this.bestChromosomes[this.currentBestSize - 1]];
-                if (lastBest.Fitness >= newChrom.Fitness)
+                if (lastBest.Fitness >= newChrom.Fitness && lastBest.Evenness >= newChrom.Evenness)
                 {
                     return;
                 }
+
+                //if (lastBest.Fitness + lastBest.Evenness >= newChrom.Fitness + newChrom.Evenness)
+                //{
+                //    return;
+                //}
             }
 
             // find place for new chromosome
@@ -271,10 +277,15 @@ namespace GaSchedule.Algorithm
                 {
                     // position of new chromosomes is found?
                     var c = this.Chromosomes[this.bestChromosomes[i - 1]];
-                    if (c.Fitness >= newChrom.Fitness)
+                    if (c.Fitness >= newChrom.Fitness && c.Evenness >= newChrom.Evenness)
                     {
                         break;
                     }
+
+                    //if (c.Fitness + c.Evenness >= newChrom.Fitness + newChrom.Evenness)
+                    //{
+                    //    break;
+                    //}
 
                     // move chromosomes to make room for new
                     // 冒泡

@@ -40,6 +40,15 @@ namespace GaSchedule.Algorithm
         // 待排的课程，由算法使用者提供
         public List<CourseClass> CourseClasses { get; set; } = new List<CourseClass>();
 
+        public IEnumerable<IGrouping<string, CourseClass>> CourseClassesGroups
+        {
+            get
+            {
+                //return this.CourseClasses.GroupBy(cc => $"{cc.CourseId}-{cc.TeacherId}-{cc.StudentsGroupId}").Where(g => g.Count() > 1);
+                return this.CourseClasses.GroupBy(cc => $"{cc.CourseId}-{cc.StudentsGroupId}").Where(g => g.Count() > 1);
+            }
+        }
+
         /// <summary>
         /// 一个教学周期（一般是一周）内能够安排的课程的总数
         /// </summary>

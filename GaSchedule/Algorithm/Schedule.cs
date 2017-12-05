@@ -59,6 +59,7 @@ namespace GaSchedule.Algorithm
 
                 // 拷贝适应性
                 this.Fitness = schedule.Fitness;
+                this.Evenness = schedule.Evenness;
 
                 this.SelfCheck();
             }
@@ -93,10 +94,16 @@ namespace GaSchedule.Algorithm
 
         #region Members
 
+        public void CalculateFitnessAndEvenness()
+        {
+            this.CalculateFitness();
+            this.CalculateEvenness();
+        }
+
         /// <summary>
         /// 计算染色体的适应度
         /// </summary>
-        public void CalculateFitness()
+        private void CalculateFitness()
         {
             int score = 0;
 
@@ -177,8 +184,6 @@ namespace GaSchedule.Algorithm
                 {
                     score++;
                 }
-
-                
             }
 
             // calculate fitess value based on score
@@ -188,12 +193,45 @@ namespace GaSchedule.Algorithm
         /// <summary>
         /// 计算课程排列的均匀度。
         /// </summary>
-        public void CalculateEvenness()
+        private void CalculateEvenness()
         {
             // 相同课堂（同班级，同老师，同科目）的均匀分布
-            // 先获得课程列表
+
+            // 获得相同课程的分组
+            var groups = this.configuration.CourseClassesGroups;
+
+            // 如果所有课程都是不同的，则不存在均匀问题，即均匀度为1
+            if (groups.Count() < 1)
+            {
+                this.Evenness = 1;
+            }
+
+            float result = 0;
+
             // 逐个计算均匀度，满分为1分
-            // 用总分除以相同课堂数，得到当前课程表的均匀度适应度
+            foreach (var g in groups)
+            {
+                var days = this.Slots.Where(s => s.Classes.FirstOrDefault(c => g.Contains(c)) != null).Select(s => s.DayIndex).OrderByDescending(d => d).ToArray();
+                float averageInterval = this.configuration.Parameters.WorkingDaysNumber / g.Count();
+
+                int score = 0;
+                for (int i = 0; i < days.Length - 1; i++)
+                {
+                    // 间距足够，得1分，否则不得分
+                    score += Math.Abs(days[i] - days[i + 1] - averageInterval) / averageInterval < 0.5 ? 1 : 0;
+                }
+
+                // 总分除去间隔数得到平均间隔
+                result += (float)score / (g.Count() - 1);
+
+                // 取最小均匀度作为全课程表的均匀度
+                //if (result < minEvenness)
+                //{
+                //    minEvenness = result;
+                //}
+            }
+
+            this.Evenness = result / groups.Count();
         }
 
         /// <summary>
@@ -261,7 +299,7 @@ namespace GaSchedule.Algorithm
             }
 
             // 计算新染色体的适应度
-            newSchedule.CalculateFitness();
+            newSchedule.CalculateFitnessAndEvenness();
 
             newSchedule.SelfCheck();
 
@@ -332,7 +370,7 @@ namespace GaSchedule.Algorithm
             }
 
             //计算新染色体的适应性
-            newSchedule.CalculateFitness();
+            newSchedule.CalculateFitnessAndEvenness();
 
             newSchedule.SelfCheck();
 
@@ -380,7 +418,7 @@ namespace GaSchedule.Algorithm
             }
 
             // 重新计算适应度
-            this.CalculateFitness();
+            this.CalculateFitnessAndEvenness();
 
             this.SelfCheck();
         }

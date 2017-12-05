@@ -18,9 +18,9 @@ namespace ClassScheduler
             // throw new NotImplementedException();
         }
 
-        public void NewBestChromosome(int generation, float fitness)
+        public void NewBestChromosome(int generation, float fitness, float evenness)
         {
-            this.worker.ReportProgress(generation, $"Generation: {generation}, Fitness: {fitness}");
+            this.worker.ReportProgress(generation, $"Generation: {generation}, Fitness: {fitness}, Evenness: {evenness}");
         }
     }
 }
