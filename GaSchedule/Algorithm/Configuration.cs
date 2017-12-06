@@ -40,10 +40,12 @@ namespace GaSchedule.Algorithm
         // 待排的课程，由算法使用者提供
         public List<CourseClass> CourseClasses { get; set; } = new List<CourseClass>();
 
+        // 将课堂按照科目和班级分组，以便计算它们在课表中的均匀性
         public IEnumerable<IGrouping<string, CourseClass>> CourseClassesGroups
         {
             get
             {
+                // 不必考虑教师，因为会导致不必要的分组。况且现实中也不太可能有这种情况
                 //return this.CourseClasses.GroupBy(cc => $"{cc.CourseId}-{cc.TeacherId}-{cc.StudentsGroupId}").Where(g => g.Count() > 1);
                 return this.CourseClasses.GroupBy(cc => $"{cc.CourseId}-{cc.StudentsGroupId}").Where(g => g.Count() > 1);
             }

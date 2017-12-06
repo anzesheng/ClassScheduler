@@ -191,13 +191,12 @@ namespace GaSchedule.Algorithm
         }
 
         /// <summary>
-        /// 计算课程排列的均匀度。
+        /// 计算所有相同课堂（相同科目相同班级）排列的均匀度。
+        /// 期望相同课堂（同班级，同科目）能够在工作日区间内均匀分布
         /// </summary>
         private void CalculateEvenness()
         {
-            // 相同课堂（同班级，同老师，同科目）的均匀分布
-
-            // 获得相同课程的分组
+            // 获得相同科目相同班级的分组
             var groups = this.configuration.CourseClassesGroups;
 
             // 如果所有课程都是不同的，则不存在均匀问题，即均匀度为1
@@ -206,32 +205,30 @@ namespace GaSchedule.Algorithm
                 this.Evenness = 1;
             }
 
-            float result = 0;
+            // 各个组的均匀度总分
+            float totalScore = 0;
 
-            // 逐个计算均匀度，满分为1分
+            // 逐个计算各个组的均匀度，满分为1分
             foreach (var g in groups)
             {
                 var days = this.Slots.Where(s => s.Classes.FirstOrDefault(c => g.Contains(c)) != null).Select(s => s.DayIndex).OrderByDescending(d => d).ToArray();
+
+                // 计算平均间隔，取整，非四舍五入
                 float averageInterval = this.configuration.Parameters.WorkingDaysNumber / g.Count();
 
-                int score = 0;
+                int groupScore = 0;
                 for (int i = 0; i < days.Length - 1; i++)
                 {
                     // 间距足够，得1分，否则不得分
-                    score += Math.Abs(days[i] - days[i + 1] - averageInterval) / averageInterval < 0.5 ? 1 : 0;
+                    groupScore += Math.Abs(days[i] - days[i + 1] - averageInterval) / averageInterval < 0.5 ? 1 : 0;
                 }
 
-                // 总分除去间隔数得到平均间隔
-                result += (float)score / (g.Count() - 1);
-
-                // 取最小均匀度作为全课程表的均匀度
-                //if (result < minEvenness)
-                //{
-                //    minEvenness = result;
-                //}
+                // 组的总分除去组内的间隔数得到平均均匀度，作为组的得分
+                totalScore += (float)groupScore / (g.Count() - 1);
             }
 
-            this.Evenness = result / groups.Count();
+            // 所有组的平均分作为当前课表的平均度
+            this.Evenness = totalScore / groups.Count();
         }
 
         /// <summary>
